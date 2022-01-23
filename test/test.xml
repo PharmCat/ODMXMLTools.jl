@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ODM
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  FileOID="FILEID"
+  Description="FULL"
+  FileType="Snapshot"
+  ODMVersion="1.3">
+    <Study OID="DEFS">
+      <GlobalVariables>
+        <StudyName>Study 1</StudyName>
+        <CurrentColor>Blue</CurrentColor>
+        <StudyDescription>Study 1 Description</StudyDescription>
+        <ProtocolName>Protocol Number</ProtocolName>
+      </GlobalVariables>
+      <MetaDataVersion OID="v1" Name="Version_v1">
+      <Protocol>
+        <StudyEventRef StudyEventOID="SE_VIZIT1" OrderNumber="1" Mandatory="Yes" />
+      </Protocol>
+      <StudyEventDef OID="SE_VIZIT1" Name="Vizit 1" Repeating="No" Type="Scheduled">
+        <FormRef FormOID="FORM_1" Mandatory="Yes" />
+      </StudyEventDef>
+      <FormDef OID="FORM_1" Name="Form 1" Repeating="No">
+        <ItemGroupRef ItemGroupOID="IG_1" Mandatory="Yes" />
+      </FormDef>
+      <ItemGroupDef OID="IG_1" Name="Item group 1" Repeating="No" SASDatasetName="UNGRP">
+        <ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />
+      </ItemGroupDef>
+      <ItemDef OID="I_1" Name="Item 1" DataType="text" Length="3" SASFieldName="IT1" Comment="Comments">
+      </ItemDef>
+    </MetaDataVersion>
+    </Study>
+    <Study OID="ST1">
+      <GlobalVariables>
+        <StudyName>Study 1</StudyName>
+        <CurrentColor>Blue</CurrentColor>
+        <StudyDescription>Study 1 Description</StudyDescription>
+        <ProtocolName>Protocol Number</ProtocolName>
+      </GlobalVariables>
+      <MetaDataVersion OID="v2" Name="Version_v2">
+        <Include StudyOID="DEFS" MetaDataVersionOID="v1"/>
+      <ItemGroupDef OID="IG_1" Name="Item group 1" Repeating="No" SASDatasetName="UNGRP">
+        <ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />
+        <ItemRef ItemOID="I_2" OrderNumber="1" Mandatory="Yes" />
+      </ItemGroupDef>
+      <ItemDef OID="I_2" Name="Item 2" DataType="text" Length="3" SASFieldName="IT2" Comment="Comments 2">
+      </ItemDef>
+      </MetaDataVersion>
+    </Study>
+    <ClinicalData StudyOID="ST1" MetaDataVersionOID="v2">
+    </ClinicalData>
+</ODM>
