@@ -9,14 +9,15 @@ module ODMXMLTools
     findstudy,
     findstudymetadata,
     findelement,
-    findelement,
     findallelements,
     buildmetadata,
     eventlist,
     formlist,
     itemgrouplist,
     itemlist,
-    itemgroupcontent
+    itemgroupcontent,
+    validateodm,
+    clinicaldatatable
 
     const FILETYPE    = Set(["Snapshot", "Transactional"])
     const GRANULARITY = Set(["All", "Metadata", "AdminData", "ReferenceData", "AllClinicalData", "SingleSite", "SingleSubject"])
@@ -25,5 +26,6 @@ module ODMXMLTools
 
     include("odmxml.jl")
     include("checknode.jl")
+    include("spss.jl")
 
 end # module
