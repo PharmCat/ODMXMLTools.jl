@@ -1,10 +1,10 @@
 
-
+#=
 struct SPSSExport
     df::DataFrame
     code::String
 end
-#=
+
 function spssexportbyitemgroup(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
 
     cld    = findclinicaldata(odm, soid, moid)

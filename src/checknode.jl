@@ -92,6 +92,27 @@ end
 function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ProtocolName})
     length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s)")
 end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:BasicDefinitions})
+    length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s)")
+end
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:MeasurementUnit})
+    length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s)")
+    ks = Set(["OID", "Name"])
+    for k in keys(node.attr)
+        k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
+    end
+    if "OID" in keys(node.attr)
+        #other check
+    else
+        push!(log, "$(name(node)): No OID attribute")
+    end
+    if "Name" in keys(node.attr)
+        #other check
+    else
+        push!(log, "$(name(node)): No Name attribute")
+    end
+end
 #parse(DateTime, "2022-01-21T13:23:36.45", dateformat"yyyy-mm-ddTHH:MM:SS.s")
 #ZonedDateTime("2022-01-21T13:23:36+00:00", "yyyy-mm-ddTHH:MM:SSzzzz")
 #ZonedDateTime("2022-01-21T13:23:36.664+00:00", "yyyy-mm-ddTHH:MM:SS.s+zzzz")

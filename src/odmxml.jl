@@ -12,7 +12,7 @@ end
 
 struct ODMRoot <: AbstractODMNode
     name::Symbol
-    attr::Dict{String, String}
+    attr::Dict{Symbol, String}
     el::Vector{AbstractODMNode}
     function ODMRoot(attr)
         new(:ODM, attr, AbstractODMNode[])
@@ -21,7 +21,7 @@ end
 
 struct ODMNode <: AbstractODMNode
     name::Symbol
-    attr::Dict{String, String}
+    attr::Dict{Symbol, String}
     el::Vector{AbstractODMNode}
     function ODMNode(name, attr, el)
         new(name, attr, el)
@@ -39,13 +39,13 @@ struct StudyMetaData <: AbstractODMNode
 end
 
 function Base.show(io::IO, n::T) where T <: AbstractODMNode
-    print(io, "$(n.name)$("OID" in keys(n.attr) ? "(OID:$(attribute(n, "OID")))" : "")")
+    print(io, "$(n.name)  ($(:OID in keys(n.attr) ? "OID:$(attribute(n, :OID)))" : "")$(:StudyOID in keys(n.attr) ? " StudyOID:$(attribute(n, :StudyOID)))" : ""))")
 end
 function Base.show(io::IO, n::ODMRoot)
     print(io, "ODM root node")
 end
 function Base.show(io::IO, n::StudyMetaData)
-    print(io, "Completed Study MetaData ($(length(n.el)) elements), OID: $(attribute(n.metadata, "OID")), Name: $(attribute(n.metadata, "Name"))")
+    print(io, "Completed Study MetaData ($(length(n.el)) elements), OID: $(attribute(n.metadata, :OID)), Name: $(attribute(n.metadata, :Name))")
 end
 function Base.show(io::IO, n::ODMTextNode)
     print(io, "Text Node")
@@ -68,9 +68,9 @@ function makenode(content::String)
     return ODMTextNode(content)
 end
 function attributes_dict(n)
-    d = Dict{String, String}()
+    d = Dict{Symbol, String}()
     for i in eachattribute(n)
-        d[i.name] = i.content
+        d[Symbol(i.name)] = i.content
     end
     d
 end
@@ -112,9 +112,16 @@ end
 ################################################################################
 # SUPPORT FUNCTIONS
 ################################################################################
-function attribute(n::AbstractODMNode, attr)
+function attribute(n::AbstractODMNode, attr::Symbol)
     if ht_keyindex(n.attr, attr) > 0 return n.attr[attr] else return missing end
 end
+function attribute(n::AbstractODMNode, attr::String)
+    attribute(n, Symbol(attr))
+end
+function attributes(n::AbstractODMNode, attrs::AbstractVector{T}) where T <: StrOrSym
+    broadcast(x-> attribute(n, x), attrs)
+end
+
 function name(n::ODMRoot)
     :ODM
 end
@@ -124,11 +131,11 @@ end
 function name(n::ODMTextNode)
     nothing
 end
-function have_oid(n::AbstractODMNode)
-    if ht_keyindex(n.attr, "OID") > 0 return true else return false end
-end
-function have_attr(n::AbstractODMNode, attr::AbstractString)
+function have_attr(n::AbstractODMNode, attr::Symbol)
     if ht_keyindex(n.attr, attr) > 0 return true else return false end
+end
+function have_oid(n::AbstractODMNode)
+    have_attr(n, :OID)
 end
 function appendelements!(inds::AbstractVector, n::AbstractODMNode, name::Symbol)
     for i in n.el
@@ -137,6 +144,17 @@ function appendelements!(inds::AbstractVector, n::AbstractODMNode, name::Symbol)
         end
     end
     inds
+end
+function content(n::ODMTextNode)
+    n.content
+end
+function content(n::AbstractODMNode)
+    for i in n.el
+        if isa(i, ODMTextNode)
+            return content(i)
+        end
+    end
+    nothing
 end
 ################################################################################
 # BASIC FUNCTIONS
@@ -150,7 +168,7 @@ function findelement(n::AbstractODMNode, name::Symbol, oid::AbstractString)
     for i in n.el
         if i.name == name
             if have_oid(i)
-                if i.attr["OID"] == oid return i end
+                if attribute(i, :OID) == oid return i end
             end
         end
     end
@@ -209,7 +227,7 @@ function metadatalist(odm::ODMRoot)
         if i.name == :Study
             for j in i.el
                 if j.name == :MetaDataVersion
-                    push!(df, [attribute(i, "OID"), attribute(j, "OID"), attribute(j, "Name")])
+                    push!(df, (attribute(i, "OID"), attribute(j, "OID"), attribute(j, "Name")))
                 end
             end
         end
@@ -217,13 +235,32 @@ function metadatalist(odm::ODMRoot)
     df
 end
 """
-    findstudymetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
+    studylist(odm::ODMRoot)
 
-Find metadata for study with study OID soid and metadata OID moid.
+Returm table of Study elements.
 """
-function findstudymetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
-    study = findstudy(odm, soid)
-    findelement(study, :MetaDataVersion, moid)
+function studylist(odm::ODMRoot)
+    df = DataFrame(StudyOID = String[])
+    for i in odm.el
+        if i.name == :Study
+            push!(df, (attribute(i, "OID"),))
+        end
+    end
+    df
+end
+"""
+    clinicaldatalist(odm::ODMRoot)
+
+Returm table of ClinicalData elements.
+"""
+function clinicaldatalist(odm::ODMRoot)
+    df = DataFrame(StudyOID = String[], MetaDataVersionOID = String[])
+    for i in odm.el
+        if i.name == :ClinicalData
+            push!(df, (attribute(i, "StudyOID"), attribute(i, "MetaDataVersionOID")))
+        end
+    end
+    df
 end
 """
     findclinicaldata(odm::ODMRoot, soid::AbstractString)
@@ -258,6 +295,15 @@ function findstudy(odm::ODMRoot, oid::AbstractString)
     end
     nothing
 end
+"""
+    findstudymetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
+
+Find metadata for study with study OID soid and metadata OID moid.
+"""
+function findstudymetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
+    study = findstudy(odm, soid)
+    findelement(study, :MetaDataVersion, moid)
+end
 ################################################################################
 # List functions (return DataFrames)
 ################################################################################
@@ -291,66 +337,60 @@ function formlist(md::AbstractODMNode)
 end
 
 """
-    itemgrouplist(md::AbstractODMNode; optional = false)
+    itemgrouplist(md::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
 
 Return item groups (ItemGroupDef).
 
 If optional = true - return all optional attributes.
+attrs - list of attributes.
 """
-function itemgrouplist(md::AbstractODMNode; optional = false)
-    if optional
-        df = DataFrame(OID = String[], Name = String[], Repeating= String[], SASDatasetName = Union{Missing, String}[], Comment = Union{Missing, String}[])
-        for i in md.el
-            if name(i) == :ItemGroupDef
-                push!(df, (attribute(i, "OID"), attribute(i, "Name"), attribute(i, "Repeating"), attribute(i, "SASDatasetName"), attribute(i, "Comment")))
-            end
+function itemgrouplist(md::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+    if isnothing(attrs)
+        if optional
+            attrs = [:OID, :Name, :Repeating, :SASDatasetName, :Comment]
+        else
+            attrs = [:OID, :Name, :Repeating]
         end
-    else
-        df = DataFrame(OID = String[], Name = String[], Repeating= String[])
-        for i in md.el
-            if name(i) == :ItemGroupDef
-                push!(df, (attribute(i, "OID"), attribute(i, "Name"), attribute(i, "Repeating")))
-            end
+    end
+    df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), attrs)
+    for i in md.el
+        if name(i) == :ItemGroupDef
+            push!(df, attributes(i, attrs))
         end
     end
     df
 end
 """
-    itemlist(md::AbstractODMNode; optional = false)
+    itemlist(md::AbstractODMNode; optional = false, attrs = nothing)
 
 Return items (ItemDef).
 
 If optional = true - return all optional attributes.
 """
-function itemlist(md::AbstractODMNode; optional = false)
-    itemlist(md.el; optional = optional)
+function itemlist(md::AbstractODMNode; optional = false, attrs = nothing)
+    itemlist(md.el; optional = optional, attrs = attrs)
 end
-function itemlist(el::Vector{T}; optional = false) where T <: AbstractODMNode
-    if optional
-        df = DataFrame(OID = String[], Name = String[], DataType= String[],
-        Length = Union{Missing, String}[], SignificantDigits = Union{Missing, String}[],
-        SASFieldName = Union{Missing, String}[], SDSVarName = Union{Missing, String}[],
-        Origin = Union{Missing, String}[], Comment = Union{Missing, String}[])
-        for i in el
-            if name(i) == :ItemDef
-                push!(df, (attribute(i, "OID"), attribute(i, "Name"), attribute(i, "DataType"),
-                attribute(i, "Length"), attribute(i, "SignificantDigits"),
-                attribute(i, "SASFieldName"), attribute(i, "SDSVarName"),
-                attribute(i, "Origin"), attribute(i, "Comment")))
-            end
+"""
+    itemlist(el::Vector{T}; optional = false, attrs = nothing) where T <: AbstractODMNode
+"""
+function itemlist(el::Vector{T}; optional = false, attrs = nothing) where T <: AbstractODMNode
+    if isnothing(attrs)
+        if optional
+            attrs = [:OID, :Name, :DataType, :Length, :SignificantDigits, :SASFieldName, :SDSVarName, :Origin, :Comment]
+        else
+            attrs = [:OID, :Name, :DataType]
         end
-    else
-        df = DataFrame(OID = String[], Name = String[], DataType= String[])
-        for i in el
-            if name(i) == :ItemDef
-                push!(df, (attribute(i, "OID"), attribute(i, "Name"), attribute(i, "DataType")))
-            end
+    end
+    df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), attrs)
+    for i in el
+        if name(i) == :ItemDef
+            push!(df, attributes(i, attrs))
         end
     end
     df
 end
 """
-    itemlist(md::AbstractODMNode; optional = false)
+    itemgroupcontent(md, oid; optional = false)
 
 Return items (ItemDef) for concrete item group (ItemGroupDef) by OID.
 
@@ -396,11 +436,11 @@ function buildmetadata(mdat::AbstractODMNode)
     stmd
 end
 """
-    clinicaldatatable(cd::AbstractODMNode)
+    clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing)
 
 Return clinical data table in long formal. `cd` should be ClinicalData.
 """
-function clinicaldatatable(cd::AbstractODMNode)
+function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing)
     if name(cd) != :ClinicalData error("This is not ClinicalData") end
     df = DataFrame(SubjectKey = String[], StudyEventOID = String[], FormOID = String[], ItemGroupOID = String[], ItemOID = String[], Value = String[])
     sdl = findelements(cd, :SubjectData)
@@ -418,15 +458,18 @@ function clinicaldatatable(cd::AbstractODMNode)
                 resize!(gdl, 0)
                 appendelements!(gdl, f, :ItemGroupData)
                 for g in gdl
+                    if !isnothing(itemgroup)
+                        if attribute(g, :ItemGroupOID) != itemgroup continue end
+                    end
                     resize!(idl, 0)
                     appendelements!(idl, g, :ItemData)
                     for i in idl
-                        push!(df, (attribute(s, "SubjectKey"),
-                        attribute(e, "StudyEventOID"),
-                        attribute(f, "FormOID"),
-                        attribute(g, "ItemGroupOID"),
-                        attribute(i, "ItemOID"),
-                        attribute(i, "Value")))
+                        push!(df, (attribute(s, :SubjectKey),
+                        attribute(e, :StudyEventOID),
+                        attribute(f, :FormOID),
+                        attribute(g, :ItemGroupOID),
+                        attribute(i, :ItemOID),
+                        attribute(i, :Value)))
                     end
                 end
             end
@@ -435,15 +478,54 @@ function clinicaldatatable(cd::AbstractODMNode)
     df
 end
 """
-    clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
+    clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString; itemgroup = nothing)
 
 Return clinical data table in long formal.
 """
-function clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
-    cld  = findclinicaldata(odm, soid, moi)
+function clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString; itemgroup = nothing)
+    cld  = findclinicaldata(odm, soid, moid)
     isnothing(cld) && error("ClinicalData not found")
-    clinicaldatatable(cld)
+    clinicaldatatable(cld; itemgroup = itemgroup)
 end
+"""
+    subjectdatatable(cld::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+
+Subject information table
+"""
+function subjectdatatable(cld::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+    if name(cld) != :ClinicalData error("This is not ClinicalData") end
+    if isnothing(attrs)
+        if optional
+            attrs = [:SubjectKey, :TransactionType]
+        else
+            attrs = [:SubjectKey]
+        end
+    end
+    df = DataFrame(Matrix{Union{String, Missing}}(undef, 0, length(attrs)), attrs)
+    for s in cld.el
+        if name(s) == :SubjectData
+            push!(df, attributes(s, attrs))
+        end
+    end
+    df
+end
+"""
+    subjectdatatable(odm::ODMRoot; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+"""
+function subjectdatatable(odm::ODMRoot; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+    cld = findelements(odm, :ClinicalData)
+    if length(cld) > 0
+        df = subjectdatatable(cld[1]; optional = optional, attrs = attrs)
+        if length(cld) > 1
+            for i = 2:length(cld)
+                append!(df, subjectdatatable(cld[i]; optional = optional, attrs = attrs))
+            end
+        end
+        return df
+    end
+    nothing
+end
+
 """
     buildelementsdata(stmd::AbstractODMNode)
 
@@ -460,7 +542,7 @@ function inlist(n, dest)
     for i in dest
         if n.name == i.name
             if have_oid(n)
-                if n.attr["OID"] == i.attr["OID"] return true end
+                if n.attr[:OID] == i.attr[:OID] return true end
             else
                 return true
             end
@@ -481,9 +563,70 @@ function fillstmd_(dest, source, odm)
     incl = findelements(source, :Include)
     if length(incl) > 0
         for i in incl
-            fillstmd_(dest, findstudymetadata(odm, attribute(i, "StudyOID"), attribute(i, "MetaDataVersionOID")), odm)
+            fillstmd_(dest, findstudymetadata(odm, attribute(i, :StudyOID), attribute(i, :MetaDataVersionOID)), odm)
         end
     end
     dest
 end
 ################################################################################
+# Information
+################################################################################
+"""
+    studyinfo(odm::ODMRoot, oid::AbstractString;  io = stdout)
+
+Study information.
+"""
+function studyinfo(odm::ODMRoot, oid::AbstractString;  io = stdout)
+    for i in odm.el
+        if name(i) == :Study && attribute(i, :OID) == oid
+            studyinfo(i; io = io)
+        end
+    end
+    print(io, "")
+end
+"""
+    studyinfo(odm::ODMRoot;  io = stdout)
+
+Study information.
+"""
+function studyinfo(odm::ODMRoot;  io = stdout)
+    str = ""
+    for i in odm.el
+        if name(i) == :Study
+            str *= "--------------------------------------\n"
+            str *= studyinfo_(i)
+        end
+    end
+    str *= "--------------------------------------\n"
+    print(io, str)
+end
+"""
+    studyinfo(st::AbstractODMNode;  io = stdout)
+
+Study information.
+"""
+function studyinfo(st::AbstractODMNode;  io = stdout)
+    str = studyinfo_(st)
+    print(io, str)
+end
+function studyinfo_(st::AbstractODMNode)
+    if name(st) != :Study error("This is not Study") end
+    str = "Study OID: $(attribute(st, "OID"))\n"
+    gv  = findelement(st, :GlobalVariables)
+    sn  = findelement(gv, :StudyName)
+    str *= "StudyName: $(content(sn))\n"
+    sd  = findelement(gv, :StudyDescription)
+    str *= "StudyDescription: $(content(sd))\n"
+    pn  = findelement(gv, :ProtocolName)
+    str *= "ProtocolName: $(content(pn))\n"
+    str *= "MetaDataVersion: \n"
+    mdl = findelements(st, :MetaDataVersion)
+    if length(mdl) > 0
+        for i in mdl
+            str *= "    OID: $(attribute(i, :OID)); Name: $(attribute(i, :Name))\n"
+        end
+    else
+        str *= "    No\n"
+    end
+    str
+end

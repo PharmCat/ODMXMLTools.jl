@@ -5,6 +5,8 @@ path = dirname(@__FILE__)
 cd(path)
 
 @testset "ODMXMLTools.jl" begin
+
+    io = IOBuffer();
     odm = ODMXMLTools.importxml(joinpath(path, "test.xml"))
 
     @test_nowarn ODMXMLTools.metadatalist(odm)
@@ -15,6 +17,7 @@ cd(path)
     @test_nowarn ODMXMLTools.buildmetadata(odm, "DEFS", "v1")
     mdb = ODMXMLTools.buildmetadata(odm, "ST1", "v2")
 
+    @test_nowarn ODMXMLTools.studylist(odm)
     @test_nowarn ODMXMLTools.eventlist(mdb)
     @test_nowarn ODMXMLTools.formlist(mdb)
     @test_nowarn ODMXMLTools.itemgrouplist(mdb)
@@ -27,5 +30,10 @@ cd(path)
     @test_nowarn ODMXMLTools.validateodm(odm)
 
     cdat = ODMXMLTools.findclinicaldata(odm, "ST1", "v2")
+
     @test_nowarn ODMXMLTools.clinicaldatatable(cdat)
+
+    @test_nowarn ODMXMLTools.subjectdatatable(odm; attrs = [:SubjectKey, :StudySubjectID])
+
+    @test_nowarn ODMXMLTools.studyinfo(odm; io = io)
 end

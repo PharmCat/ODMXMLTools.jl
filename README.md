@@ -29,21 +29,30 @@ ODMXMLTools.findstudymetadata(odm, "ST1", "v2")
 #Build MetaDataVersion - recursive resolve all includes
 mdb = ODMXMLTools.buildmetadata(odm, "ST1", "v2")
 
+#Study list
+ODMXMLTools.studylist(odm)
+
 #Events table
-@test_nowarn ODMXMLTools.eventlist(mdb)
+ODMXMLTools.eventlist(mdb)
 
 #Forms table
-@test_nowarn ODMXMLTools.formlist(mdb)
+ODMXMLTools.formlist(mdb)
 
 #ItemGroups table
-@test_nowarn ODMXMLTools.itemgrouplist(mdb)
+ODMXMLTools.itemgrouplist(mdb)
 
 #Items table
-@test_nowarn ODMXMLTools.itemlist(mdb)
+ODMXMLTools.itemlist(mdb)
 
 #Items table with optional attributes
-@test_nowarn ODMXMLTools.itemlist(mdb; optional = true)
+ODMXMLTools.itemlist(mdb; optional = true)
 
 #Items table within ItemGoup "IG_1"
-@test_nowarn ODMXMLTools.itemgroupcontent(mdb, "IG_1")
+ODMXMLTools.itemgroupcontent(mdb, "IG_1")
+
+#Study subject information
+ODMXMLTools.subjectdatatable(odm)
+
+#Study information
+ODMXMLTools.studyinfo(odm; io = io)
 ```
