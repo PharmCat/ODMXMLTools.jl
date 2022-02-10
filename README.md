@@ -55,4 +55,10 @@ ODMXMLTools.subjectdatatable(odm)
 
 #Study information
 ODMXMLTools.studyinfo(odm; io = io)
+
+#Get ClinicalData list
+ODMXMLTools.clinicaldatalist(odm)
+
+#Get data from ClinicalData in "long" format
+ODMXMLTools.clinicaldatatable(odm, "ST1", "v2")
 ```

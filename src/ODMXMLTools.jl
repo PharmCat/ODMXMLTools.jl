@@ -18,7 +18,8 @@ module ODMXMLTools
     itemlist,
     itemgroupcontent,
     validateodm,
-    clinicaldatatable
+    clinicaldatatable,
+    clinicaldatalist
 
     StrOrSym = Union{String, Symbol}
 
