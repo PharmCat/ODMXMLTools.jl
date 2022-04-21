@@ -259,8 +259,13 @@ module ODMXMLTools
 	:ItemDataTime
 	:ItemDataURI])
 
+    const CHNS = Dict(
+    :Symbol => [:TranslatedText],
+    )
+
     include("odmxml.jl")
     include("checknode.jl")
     include("spss.jl")
+    include("ocl.jl")
 
 end # module

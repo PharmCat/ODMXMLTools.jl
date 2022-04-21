@@ -56,7 +56,7 @@ function AbstractTrees.children(x::T) where T <: AbstractODMNode
     x.el
 end
 function AbstractTrees.children(i::ODMTextNode)
-    ()
+    []
 end
     #AbstractTrees.nodetype(::IntTree) = IntTree
 
@@ -113,7 +113,7 @@ end
 # SUPPORT FUNCTIONS
 ################################################################################
 function attribute(n::AbstractODMNode, attr::Symbol)
-    if ht_keyindex(n.attr, attr) > 0 return n.attr[attr] else return missing end
+    if ht_keyindex(n.attr, attr) > 0 return n.attr[attr] else return "" end
 end
 function attribute(n::AbstractODMNode, attr::String)
     attribute(n, Symbol(attr))
@@ -327,8 +327,16 @@ end
 Return forms (FormDef).
 """
 function formlist(md::AbstractODMNode)
+    formlist(md.el)
+end
+"""
+    formlist(el::Vector{T}) where T <: AbstractODMNode
+
+Return forms (FormDef).
+"""
+function formlist(el::Vector{T}) where T <: AbstractODMNode
     df = DataFrame(OID = String[], Name = String[], Repeating= String[])
-    for i in md.el
+    for i in el
         if name(i) == :FormDef
             push!(df, (attribute(i, "OID"), attribute(i, "Name"), attribute(i, "Repeating")))
         end
@@ -345,6 +353,17 @@ If optional = true - return all optional attributes.
 attrs - list of attributes.
 """
 function itemgrouplist(md::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+    itemgrouplist(md.el; optional = optional, attrs = attrs)
+end
+"""
+    itemgrouplist(el::Vector{T}; optional = false, attrs::Union{AbstractVector, Nothing} = nothing) where T <: AbstractODMNode
+
+Return item groups (ItemGroupDef).
+
+If optional = true - return all optional attributes.
+attrs - list of attributes.
+"""
+function itemgrouplist(el::Vector{T}; optional = false, attrs::Union{AbstractVector, Nothing} = nothing) where T <: AbstractODMNode
     if isnothing(attrs)
         if optional
             attrs = [:OID, :Name, :Repeating, :SASDatasetName, :Comment]
@@ -353,13 +372,14 @@ function itemgrouplist(md::AbstractODMNode; optional = false, attrs::Union{Abstr
         end
     end
     df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), attrs)
-    for i in md.el
+    for i in el
         if name(i) == :ItemGroupDef
             push!(df, attributes(i, attrs))
         end
     end
     df
 end
+
 """
     itemlist(md::AbstractODMNode; optional = false, attrs = nothing)
 
@@ -389,6 +409,43 @@ function itemlist(el::Vector{T}; optional = false, attrs = nothing) where T <: A
     end
     df
 end
+################################################################################
+# CONTENT
+################################################################################
+function formcontent_(md, oid)
+    ig   = findelement(md, :FormDef, oid)
+    inds = AbstractODMNode[]
+    for i in ig.el
+        if name(i) == :ItemGroupRef
+            el = findelement(md, :ItemGroupDef, attribute(i, "ItemGroupOID"))
+            if !(isnothing(el)) push!(inds, el) end
+        end
+    end
+    inds
+end
+
+function itemgroupcontent_(md, oid)
+    ig   = findelement(md, :ItemGroupDef, oid)
+    inds = AbstractODMNode[]
+    for i in ig.el
+        if name(i) == :ItemRef
+            el = findelement(md, :ItemDef, attribute(i, "ItemOID"))
+            if !(isnothing(el)) push!(inds, el) end
+        end
+    end
+    inds
+end
+
+"""
+    formcontent(md, oid)
+
+Return item groups (ItemGroupDef) for concrete form (FormDef) by OID.
+
+"""
+function formcontent(md, oid; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+    inds = formcontent_(md, oid)
+    itemgrouplist(inds; optional = optional, attrs = attrs)
+end
 """
     itemgroupcontent(md, oid; optional = false)
 
@@ -397,13 +454,22 @@ Return items (ItemDef) for concrete item group (ItemGroupDef) by OID.
 If optional = true - return all optional attributes.
 """
 function itemgroupcontent(md, oid; optional = false)
-    ig   = findelement(md, :ItemGroupDef, oid)
-    inds = AbstractODMNode[]
-    for i in ig.el
-        if name(i) == :ItemRef
-            el = findelement(md, :ItemDef, attribute(i, "ItemOID"))
-            if !(isnothing(el)) push!(inds, el) end
-        end
+    inds = itemgroupcontent_(md, oid)
+    itemlist(inds; optional = optional)
+end
+
+"""
+    itemsformcontent(md, oid; optional = false)
+
+
+"""
+function itemsformcontent(md, oid; optional = false)
+    inds   = AbstractODMNode[]
+    frm    = findelement(md, :FormDef, oid)
+    iginds = findelements(frm, :ItemGroupRef)
+    for i in iginds
+        igoid = attribute(i, "ItemGroupOID")
+        append!(inds, itemgroupcontent_(md, igoid))
     end
     itemlist(inds; optional = optional)
 end
@@ -442,7 +508,7 @@ Return clinical data table in long formal. `cd` should be ClinicalData.
 """
 function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing)
     if name(cd) != :ClinicalData error("This is not ClinicalData") end
-    df = DataFrame(SubjectKey = String[], StudyEventOID = String[], FormOID = String[], ItemGroupOID = String[], ItemOID = String[], Value = String[])
+    df = DataFrame(SubjectKey = String[], StudyEventOID = String[], FormOID = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = String[])
     sdl = findelements(cd, :SubjectData)
     edl = AbstractODMNode[]
     fdl = AbstractODMNode[]
@@ -468,6 +534,7 @@ function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing)
                         attribute(e, :StudyEventOID),
                         attribute(f, :FormOID),
                         attribute(g, :ItemGroupOID),
+                        attribute(g, :ItemGroupRepeatKey),
                         attribute(i, :ItemOID),
                         attribute(i, :Value)))
                     end

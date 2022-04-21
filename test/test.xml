@@ -36,6 +36,13 @@
         <StudyDescription>Study 1 Description</StudyDescription>
         <ProtocolName>Protocol Number</ProtocolName>
       </GlobalVariables>
+      <BasicDefinitions>
+            <MeasurementUnit OID="MU_0000001" Name="уд/мин">
+                <Symbol>
+                    <TranslatedText>уд/мин</TranslatedText>
+                </Symbol>
+            </MeasurementUnit>
+      </BasicDefinitions>    
       <MetaDataVersion OID="v2" Name="Version_v2">
         <Include StudyOID="DEFS" MetaDataVersionOID="v1"/>
       <ItemGroupDef OID="IG_1" Name="Item group 1" Repeating="No" SASDatasetName="UNGRP">

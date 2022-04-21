@@ -26,6 +26,8 @@ cd(path)
     @test_nowarn ODMXMLTools.itemlist(mdb.el)
     @test_nowarn ODMXMLTools.itemgroupcontent(mdb, "IG_1")
     @test_nowarn ODMXMLTools.findelement(mdb, :ItemGroupDef, "IG_1")
+    @test_nowarn ODMXMLTools.formcontent(mdb, "FORM_1")
+    @test_nowarn ODMXMLTools.itemsformcontent(mdb, "FORM_1"; optional = true)
 
     @test_nowarn ODMXMLTools.validateodm(odm)
 
