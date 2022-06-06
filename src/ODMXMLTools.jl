@@ -1,5 +1,6 @@
 module ODMXMLTools
     using  EzXML, DataFrames, AbstractTrees
+    using CategoricalArrays
     #using Dates
     import AbstractTrees: children
     import Base: show, ht_keyindex
