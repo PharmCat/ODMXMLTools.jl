@@ -114,7 +114,7 @@ end
 ################################################################################
 function attribute(n::AbstractODMNode, attr::Symbol)
     attrf = getfield(n, :attr)
-    if ht_keyindex(attrf, attr) > 0 return attrf[attr] else return "" end
+    if haskey(attrf, attr) return attrf[attr] else return "" end
 end
 function attribute(n::AbstractODMNode, attr::String)
     attribute(n, Symbol(attr))
@@ -144,7 +144,7 @@ function name(n::ODMTextNode)
     nothing
 end
 function have_attr(n::AbstractODMNode, attr::Symbol)
-    if ht_keyindex(getfield(n, :attr), attr) > 0 return true else return false end
+    if  haskey(getfield(n, :attr), attr) return true else return false end
 end
 function have_oid(n::AbstractODMNode)
     have_attr(n, :OID)
