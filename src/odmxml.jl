@@ -437,6 +437,7 @@ function itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = fals
     end
     df
 end
+
 ################################################################################
 # CONTENT
 ################################################################################
@@ -529,6 +530,35 @@ function buildmetadata(mdat::AbstractODMNode)
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
+
+"""
+    itemcodelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
+
+List of coded values.
+"""
+function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
+    df = DataFrame(OID = String[], Name = String[], DataType = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
+
+    cll  = findelements(cd, :CodeList)
+    clil = AbstractODMNode[] # CodeListItem
+    for cl in cll
+        resize!(clil, 0)
+        appendelements!(clil, cl, :CodeListItem)
+        for cli in clil
+            dec  = findelement(cli, :Decode)
+            text = findelement(dec, :TranslatedText)
+            push!(df, (attribute(cl, :OID),
+            attribute(cl, :Name),
+            attribute(cl, :DataType),
+            attribute(cli, :CodedValue),
+            attribute(cli, :Rank),
+            attribute(cli, :OrderNumber),
+            content(text)))
+        end
+    end
+    df
+end
+
 
 """
     clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing)
