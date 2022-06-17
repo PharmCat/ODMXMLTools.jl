@@ -2,7 +2,7 @@ name: Documenter
 on:
   push:
     branches:
-      - master
+      - main
     tags: '*'
     paths-ignore:
       - 'LICENSE.md'
@@ -17,7 +17,7 @@ on:
     types: [published]
   pull_request:
     branches:
-      - master
+      - main
 jobs:
   build:
     runs-on: ubuntu-latest
