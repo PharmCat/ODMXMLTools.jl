@@ -82,5 +82,5 @@ ODMXMLTools.subjectdatatable(odm; attrs = [:SubjectKey, :StudySubjectID])
 
 ```@example odmexample
 # Study information
-ODMXMLTools.studyinfo(odm; io = io)
+ODMXMLTools.studyinfo(odm)
 ```

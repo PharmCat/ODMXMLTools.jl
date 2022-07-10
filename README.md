@@ -2,6 +2,8 @@
 
 ODMXMLTools.jl is a simple tool set for working with ODM-XML.
 
+[![Latest docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://pharmcat.github.io/ODMXMLTools.jl/dev/)
+
 [ODM-XML](https://www.cdisc.org/standards/data-exchange/odm) is a vendor-neutral, platform-independent format for exchanging and archiving clinical and translational research data, along with their associated metadata, administrative data, reference data, and audit information. ODM-XML facilitates the regulatory-compliant acquisition, archival and exchange of metadata and data. It has become the language of choice for representing case report form content in many electronic data capture (EDC) tools.
 
 The ODM has been designed to be compliant with guidance and regulations published by the FDA for computer systems used in clinical studies.
