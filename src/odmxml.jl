@@ -201,8 +201,12 @@ function findelement(n::AbstractODMNode, nname::Symbol)
         end
     end
 end
+
+Base.findfirst(n::AbstractODMNode, args...) = findelement(n, args...)
+#Base.findfirst(n::AbstractODMNode, nname::Symbol, oid::AbstractString) = findelement(n, nname, oid)
+
 """
-    findelements(n::AbstractODMNode, name::Symbol)
+    findelements(n::AbstractODMNode, nname::Symbol)
 
 Find all elements by name.
 """
@@ -215,6 +219,23 @@ function findelements(n::AbstractODMNode, nname::Symbol)
     end
     inds
 end
+
+"""
+    findelements(n::AbstractODMNode, nnames::Vector{Symbol})
+
+Find all elements by name in list.
+"""
+function findelements(n::AbstractODMNode, nnames::Vector{Symbol})
+    inds = AbstractODMNode[]
+    for i in n.el
+        if name(i) in nnames
+            push!(inds, i)
+        end
+    end
+    inds
+end
+
+Base.findall(n::AbstractODMNode, args...) = findelements(n, args...)
 """
     countelements(n::AbstractODMNode, name::Symbol)
 
@@ -532,11 +553,11 @@ function buildmetadata(mdat::AbstractODMNode)
 end
 
 """
-    itemcodelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
+    codelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
 
 List of coded values.
 """
-function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
+function codelisttable(cd::AbstractODMNode; lang = nothing)
     df = DataFrame(OID = String[], Name = String[], DataType = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
 
     cll  = findelements(cd, :CodeList)
@@ -554,6 +575,38 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
             attribute(cli, :Rank),
             attribute(cli, :OrderNumber),
             content(text)))
+        end
+    end
+    df
+end
+
+"""
+    itemcodelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
+
+List of coded values.
+"""
+function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
+    df    = DataFrame(OID = String[], CodeListOID = String[], Name = String[], DataType = String[], Type = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
+    idef  = findelements(cd, :ItemDef)
+    for id in idef
+        clr = findfirst(id, :CodeListRef)
+        if !isnothing(clr)
+            cla   = attribute(clr, :CodeListOID)
+            cl    = findfirst(cd, :CodeList, cla)
+            clil  = findelements(cl, [:CodeListItem, :EnumeratedItem])
+            for cli in clil
+                    dec  = findelement(cli, :Decode)
+                        text = findelement(dec, :TranslatedText)
+                        push!(df, (attribute(id, :OID),
+                        cla,
+                        attribute(cl, :Name),
+                        attribute(cl, :DataType),
+                        name(cli) == :CodeListItem ? "CodeListItem" : "EnumeratedItem",
+                        attribute(cli, :CodedValue),
+                        attribute(cli, :Rank),
+                        attribute(cli, :OrderNumber),
+                        content(text)))
+            end
         end
     end
     df

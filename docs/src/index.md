@@ -11,6 +11,7 @@ ODM-XML Tools.
 ```@contents
 Pages = [
         "index.md",
+        "api.md"
       ]
 Depth = 3
 ```

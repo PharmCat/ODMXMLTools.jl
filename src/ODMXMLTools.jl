@@ -3,7 +3,7 @@ module ODMXMLTools
     using CategoricalArrays
     #using Dates
     import AbstractTrees: children
-    import Base: show
+    import Base: show, findfirst, findall
 
     export importxml,
     metadatalist,
