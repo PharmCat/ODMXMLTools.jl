@@ -618,7 +618,7 @@ end
 
 Return clinical data table in long formal. `cd` should be ClinicalData.
 """
-function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing, categ = false)
+function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing, form = nothing, categ = false)
     if name(cd) != :ClinicalData error("This is not ClinicalData") end
     #df = DataFrame(SubjectKey = String[], StudyEventOID = CategoricalArray(String[]), FormOID = CategoricalArray(String[]), ItemGroupOID = CategoricalArray(String[]), ItemGroupRepeatKey = CategoricalArray(String[]), ItemOID = CategoricalArray(String[]), Value = String[])
     df = DataFrame(SubjectKey = String[], StudyEventOID = String[], FormOID = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = String[])
@@ -643,6 +643,9 @@ function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing, categ = fal
                 for g in gdl
                     if !isnothing(itemgroup)
                         if attribute(g, :ItemGroupOID) != itemgroup continue end
+                    end
+                    if !isnothing(form)
+                        if attribute(f, :FormOID) != form continue end
                     end
                     resize!(idl, 0)
                     appendelements!(idl, g, :ItemData)
