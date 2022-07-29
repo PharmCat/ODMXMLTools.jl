@@ -1,5 +1,4 @@
-
-## Item
+## Attributes
 
 Item node should get attributes:
 
@@ -16,7 +15,7 @@ Optional attributes:
 * Origin
 * Comment
 
-### DataType
+## DataType
 
 DataType values:
 
@@ -40,5 +39,5 @@ DataType values:
 * intervalDatetime
 * incompleteDatetime
 * incompleteDate
-* incompleteTime 
+* incompleteTime
 * URI

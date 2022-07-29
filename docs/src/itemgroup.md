@@ -1,4 +1,4 @@
-## ItemGroup
+## Attributes
 
 ItemGroup node should get attributes:
 
@@ -6,7 +6,7 @@ ItemGroup node should get attributes:
 *	Name 	name 		
 *	Repeating 	(`Yes` or `No`)
 
-Optional:
+Optional attributes:
 
 *	IsReferenceData 	(`Yes` or `No`)
 *	SASDatasetName
