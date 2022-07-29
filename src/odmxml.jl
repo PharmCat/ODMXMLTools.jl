@@ -361,18 +361,16 @@ function eventlist(md::AbstractODMNode; categ = false)
     end
     df
 end
-"""
-    formlist(md::AbstractODMNode)
-
-Return forms (FormDef).
-"""
-function formlist(md::AbstractODMNode; categ = false)
-    formlist(md.el, categ = categ)
-end
+################################################################################
+# Form
 """
     formlist(el::Vector{T}) where T <: AbstractODMNode
 
 Return forms (FormDef).
+
+Keywords:
+
+* `categ` - return `OID` as categorical;
 """
 function formlist(el::Vector{T}; categ = false) where T <: AbstractODMNode
     df = DataFrame(OID = String[], Name = String[], Repeating= String[])
@@ -386,25 +384,26 @@ function formlist(el::Vector{T}; categ = false) where T <: AbstractODMNode
     end
     df
 end
-
 """
-    itemgrouplist(md::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+    formlist(md::AbstractODMNode)
 
-Return item groups (ItemGroupDef).
-
-If optional = true - return all optional attributes.
-attrs - list of attributes.
+Return forms (FormDef).
 """
-function itemgrouplist(md::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing, categ = false)
-    itemgrouplist(md.el; optional = optional, attrs = attrs, categ = categ)
+function formlist(md::AbstractODMNode; kwargs...)
+    formlist(md.el; kwargs...)
 end
+################################################################################
+# ItemGroup
 """
-    itemgrouplist(el::Vector{T}; optional = false, attrs = nothing) where T <: AbstractODMNode
+    itemgrouplist(el::Vector{T}; optional = false, attrs = nothing, categ = false) where T <: AbstractODMNode
 
 Return item groups (ItemGroupDef).
 
-If optional = true - return all optional attributes.
-attrs - list of attributes.
+Keywords:
+
+* `optional` (true/false) - get optional attributes;
+* `attrs` - get selected attributes;
+* `categ` - return `OID` as categorical;
 """
 function itemgrouplist(el::Vector{T}; optional = false, attrs = nothing, categ = false) where T <: AbstractODMNode
     if isnothing(attrs)
@@ -425,21 +424,32 @@ function itemgrouplist(el::Vector{T}; optional = false, attrs = nothing, categ =
     end
     df
 end
-
 """
-    itemlist(md::AbstractODMNode; optional = false, attrs = nothing)
+    itemgrouplist(md::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
 
-Return items (ItemDef).
+Return item groups (ItemGroupDef).
 
 If optional = true - return all optional attributes.
+attrs - list of attributes.
 """
-function itemlist(md::AbstractODMNode; optional = false, attrs = nothing, categ = false)
-    itemlist(md.el; optional = optional, attrs = attrs, categ = categ)
+function itemgrouplist(md::AbstractODMNode; kwargs...)
+    itemgrouplist(md.el; kwargs...)
 end
+################################################################################
+# Item
 """
-    itemlist(el::Vector{T}; optional = false, attrs = nothing) where T <: AbstractODMNode
+    itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = false, datatype = nothing) where T <: AbstractODMNode
+
+Get list of items.
+
+Keywords:
+
+* `optional` (true/false) - get optional attributes;
+* `attrs` - get selected attributes;
+* `categ` - return `OID` as categorical;
+* `datatype` - select only this type of items (See DataType);
 """
-function itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = false) where T <: AbstractODMNode
+function itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = false, datatype = nothing) where T <: AbstractODMNode
     if isnothing(attrs)
         if optional
             attrs = (:OID, :Name, :DataType, :Length, :SignificantDigits, :SASFieldName, :SDSVarName, :Origin, :Comment)
@@ -450,6 +460,9 @@ function itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = fals
     df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), t_collect(attrs))
     for i in el
         if name(i) == :ItemDef
+            if !isnothing(datatype)
+                if attribute(i, :DataType) != datatype continue end
+            end
             push!(df, attributes(i, attrs))
         end
     end
@@ -458,7 +471,14 @@ function itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = fals
     end
     df
 end
+"""
+    itemlist(md::AbstractODMNode; kwargs...)
 
+Return items (ItemDef).
+"""
+function itemlist(md::AbstractODMNode; kwargs...)
+    itemlist(md.el;  kwargs...)
+end
 ################################################################################
 # CONTENT
 ################################################################################
@@ -497,23 +517,27 @@ function formcontent(md, oid; optional = false, attrs::Union{AbstractVector, Not
     itemgrouplist(inds; optional = optional, attrs = attrs)
 end
 """
-    itemgroupcontent(md, oid; optional = false)
+    itemgroupcontent(md, oid; kwargs...)
 
 Return items (ItemDef) for concrete item group (ItemGroupDef) by OID.
 
 If optional = true - return all optional attributes.
+
+keywords see (itemlist)[@ref].
 """
-function itemgroupcontent(md, oid; optional = false)
+function itemgroupcontent(md, oid; kwargs...)
     inds = itemgroupcontent_(md, oid)
-    itemlist(inds; optional = optional)
+    itemlist(inds; kwargs...)
 end
 
 """
     itemsformcontent(md, oid; optional = false)
 
+Return items (ItemDef) for concrete item form (FormDef) by OID.
 
+keywords see (itemlist)[@ref].
 """
-function itemsformcontent(md, oid; optional = false)
+function itemformcontent(md, oid; kwargs...)
     inds   = AbstractODMNode[]
     frm    = findelement(md, :FormDef, oid)
     iginds = findelements(frm, :ItemGroupRef)
@@ -521,7 +545,7 @@ function itemsformcontent(md, oid; optional = false)
         igoid = attribute(i, "ItemGroupOID")
         append!(inds, itemgroupcontent_(md, igoid))
     end
-    itemlist(inds; optional = optional)
+    itemlist(inds; kwargs...)
 end
 ################################################################################
 # TOP LEVEL FUNCTIONS

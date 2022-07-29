@@ -66,7 +66,7 @@ ODMXMLTools.formcontent
 ODMXMLTools.itemgroupcontent
 ```
 
-### ODMXMLTools.itemsformcontent
+### ODMXMLTools.itemformcontent
 ```@docs
 ODMXMLTools.itemsformcontent
 ```

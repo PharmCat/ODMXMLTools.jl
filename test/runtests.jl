@@ -1,13 +1,13 @@
 using ODMXMLTools
 using Test
 
-path = dirname(@__FILE__)
-cd(path)
+#path = dirname(@__FILE__)
+#cd(path)
 
 @testset "ODMXMLTools.jl" begin
 
     io = IOBuffer();
-    odm = ODMXMLTools.importxml(joinpath(path, "test.xml"))
+    odm = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "test.xml"))
 
     @test_nowarn ODMXMLTools.metadatalist(odm)
     st1 =  ODMXMLTools.findstudy(odm, "ST1")
@@ -27,7 +27,7 @@ cd(path)
     @test_nowarn ODMXMLTools.itemgroupcontent(mdb, "IG_1")
     @test_nowarn ODMXMLTools.findelement(mdb, :ItemGroupDef, "IG_1")
     @test_nowarn ODMXMLTools.formcontent(mdb, "FORM_1")
-    @test_nowarn ODMXMLTools.itemsformcontent(mdb, "FORM_1"; optional = true)
+    @test_nowarn ODMXMLTools.itemformcontent(mdb, "FORM_1"; optional = true)
 
     @test_nowarn ODMXMLTools.validateodm(odm)
 
