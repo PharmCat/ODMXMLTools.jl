@@ -642,7 +642,11 @@ end
 
 Return clinical data table in long formal. `cd` should be ClinicalData.
 """
-function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing, form = nothing, categ = false)
+function clinicaldatatable(cd::AbstractODMNode;
+        itemgroup = nothing,
+        form = nothing,
+        item::Union{Nothing, AbstractString, <: AbstractVector{<:AbstractString}} = nothing,
+        categ = false, )
     if name(cd) != :ClinicalData error("This is not ClinicalData") end
     #df = DataFrame(SubjectKey = String[], StudyEventOID = CategoricalArray(String[]), FormOID = CategoricalArray(String[]), ItemGroupOID = CategoricalArray(String[]), ItemGroupRepeatKey = CategoricalArray(String[]), ItemOID = CategoricalArray(String[]), Value = String[])
     df = DataFrame(SubjectKey = String[], StudyEventOID = String[], FormOID = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = String[])
@@ -651,6 +655,8 @@ function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing, form = noth
     fdl = AbstractODMNode[]
     gdl = AbstractODMNode[]
     idl = AbstractODMNode[]
+
+    if isa(item, AbstractString) item = [item] end
     #sdl = Iterators.filter(isSubjectData, cd.el)
     for s in sdl
         resize!(edl, 0)
@@ -675,6 +681,9 @@ function clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing, form = noth
                     appendelements!(idl, g, :ItemData)
                     #idl = Iterators.filter(isItemData, g.el)
                     for i in idl
+                        if !isnothing(item)
+                            if !(attribute(i, :ItemOID) in item) continue end
+                        end
                         push!(df, (attribute(s, :SubjectKey),
                         attribute(e, :StudyEventOID),
                         attribute(f, :FormOID),
@@ -700,11 +709,79 @@ end
     clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString; itemgroup = nothing)
 
 Return clinical data table in long formal.
+
+* soid - StudyOID
+* moid - MetaDataVersionOID
 """
-function clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString; itemgroup = nothing)
+function clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString; kwargs...)
     cld  = findclinicaldata(odm, soid, moid)
     isnothing(cld) && error("ClinicalData not found")
-    clinicaldatatable(cld; itemgroup = itemgroup)
+    clinicaldatatable(cld; kwargs...)
+end
+
+"""
+    clinicaldatatable(odm::ODMRoot, inds::AbstractVector{Int}; kwargs...)
+
+Return clinical data table in long formal.
+
+* inds -  indexes of clinicaldatalist table.
+"""
+function clinicaldatatable(odm::ODMRoot, inds::AbstractVector{Int}; kwargs...)
+    cdl = clinicaldatalist(odm)
+    (size(cld, 1) == 0) && error("ClinicalData not found")
+    (length(inds) != length(unique(inds)))  && error("Inds not qnique")
+    all(x -> x in 1:size(cdl, 1), inds) && error("Inds not in range 1:$(size(cdl, 1))")
+
+    df = clinicaldatatable(findclinicaldata(odm, cdl[first(inds), 1], cdl[first(inds), 2]); kwargs...)
+    if length(inds) > 1
+        for i = 2:length(inds)
+            append!(df, clinicaldatatable(findclinicaldata(odm, cdl[inds[i], 1], cdl[inds[i], 2]); kwargs...))
+        end
+    end
+    df
+end
+
+
+"""
+    clinicaldatatable(odm::ODMRoot, range::UnitRange{Int64}; kwargs...)
+
+Return clinical data table in long formal.
+
+* inds -  indexes of clinicaldatalist table.
+"""
+function clinicaldatatable(odm::ODMRoot, range::UnitRange{Int64}; kwargs...)
+    cdl = clinicaldatalist(odm)
+    s = size(cdl, 1)
+    s == 0 && error("ClinicalData not found")
+    if !(range ⊆ 1:s)
+        error("Range $range not ⊆ 1:$(size(cdl, 1))")
+    end
+
+    df = clinicaldatatable(findclinicaldata(odm, cdl[first(range), 1], cdl[first(range), 2]); kwargs...)
+    if length(range) > 1
+        for i = range[2]:last(range)
+            append!(df, clinicaldatatable(findclinicaldata(odm, cdl[i, 1], cdl[i, 2]); kwargs...))
+        end
+    end
+    df
+end
+
+"""
+    clinicaldatatable(odm::ODMRoot; kwargs...)
+
+Return clinical data table in long formal.
+
+"""
+function clinicaldatatable(odm::ODMRoot; kwargs...)
+    cdl = clinicaldatalist(odm)
+    (size(cld, 1) == 0) && error("ClinicalData not found")
+    df = clinicaldatatable(findclinicaldata(odm, cdl[1, 1], cdl[1, 2]); kwargs...)
+    if size(cdl, 1) > 1
+        for i = 2:size(cdl, 1)
+            append!(df, clinicaldatatable(findclinicaldata(odm, cdl[i, 1], cdl[i, 2]); kwargs...))
+        end
+    end
+    df
 end
 
 """
