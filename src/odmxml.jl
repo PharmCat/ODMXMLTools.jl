@@ -172,6 +172,21 @@ end
 t_collect(a::Tuple) = [i for i in a];
 t_collect(a::Vector) = a;
 t_collect(a) = collect(a);
+
+# Make DataFrame from md node, by name, include attrs
+function df_list(md::AbstractODMNode, nname::Symbol, attrs)
+    df_list(md.el, nname, attrs)
+end
+function df_list(el::Vector{T}, nname::Symbol, attrs) where T <: AbstractODMNode
+    df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), t_collect(attrs))
+    for i in el
+        if name(i) == nname
+            push!(df, attributes(i, attrs))
+        end
+    end
+    df
+end
+
 ################################################################################
 # BASIC FUNCTIONS
 ################################################################################
@@ -345,17 +360,33 @@ end
 # List functions (return DataFrames)
 ################################################################################
 """
-    eventlist(md::AbstractODMNode)
+    eventlist(md::AbstractODMNode; optional = false, attrs = nothing, categ = false)
 
 Return events (StudyEventDef).
+
+Keywords:
+
+* `optional` (true/false) - get optional attributes;
+* `attrs` - get selected attributes;
+* `categ` - return `OID` as categorical;
 """
-function eventlist(md::AbstractODMNode; categ = false)
-    df = DataFrame(OID = String[], Name = String[], Repeating= String[], Type = String[])
-    for i in md.el
-        if name(i) == :StudyEventDef
-            push!(df, (attribute(i, "OID"), attribute(i, "Name"), attribute(i, "Repeating"), attribute(i, "Type")))
+function eventlist(md::AbstractODMNode; optional = false, attrs = nothing, categ = false)
+    if isnothing(attrs)
+        if optional
+            attrs = (:OID, :Name, :Repeating, :Type, :Category)
+        else
+            attrs = (:OID, :Name, :Repeating, :Type)
         end
     end
+    df = df_list(md, :StudyEventDef, attrs)
+    #=
+    df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), t_collect(attrs))
+    for i in md.el
+        if name(i) == :StudyEventDef
+            push!(df, attributes(i, attrs))
+        end
+    end
+    =#
     if categ
         transform!(df, :OID => categorical, renamecols=false)
     end
@@ -364,21 +395,28 @@ end
 ################################################################################
 # Form
 """
-    formlist(el::Vector{T}) where T <: AbstractODMNode
+    formlist(el::Vector{T}; attrs = nothing,  categ = false) where T <: AbstractODMNode
 
 Return forms (FormDef).
 
 Keywords:
 
+* `attrs` - get selected attributes;
 * `categ` - return `OID` as categorical;
 """
-function formlist(el::Vector{T}; categ = false) where T <: AbstractODMNode
-    df = DataFrame(OID = String[], Name = String[], Repeating= String[])
+function formlist(el::Vector{T}; attrs = nothing,  categ = false) where T <: AbstractODMNode
+    if isnothing(attrs)
+        attrs = (:OID, :Name, :Repeating)
+    end
+    df = df_list(el, :FormDef, attrs)
+    #=
+    df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), t_collect(attrs))
     for i in el
         if name(i) == :FormDef
-            push!(df, (attribute(i, "OID"), attribute(i, "Name"), attribute(i, "Repeating")))
+            push!(df, attributes(i, attrs))
         end
     end
+    =#
     if categ
         transform!(df, :OID => categorical, renamecols=false)
     end
@@ -413,12 +451,15 @@ function itemgrouplist(el::Vector{T}; optional = false, attrs = nothing, categ =
             attrs = (:OID, :Name, :Repeating)
         end
     end
+    df = df_list(el, :ItemGroupDef, attrs)
+    #=
     df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), t_collect(attrs))
     for i in el
         if name(i) == :ItemGroupDef
             push!(df, attributes(i, attrs))
         end
     end
+    =#
     if categ
         transform!(df, :OID => categorical, renamecols=false)
     end
@@ -507,7 +548,7 @@ function itemgroupcontent_(md, oid)
 end
 
 """
-    formcontent(md, oid)
+    formcontent(md, oid; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
 
 Return item groups (ItemGroupDef) for concrete form (FormDef) by OID.
 

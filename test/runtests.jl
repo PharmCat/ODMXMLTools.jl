@@ -19,8 +19,11 @@ using Test
 
     @test_nowarn ODMXMLTools.studylist(odm)
     @test_nowarn ODMXMLTools.eventlist(mdb)
+    @test_nowarn ODMXMLTools.eventlist(mdb; optional = true)
     @test_nowarn ODMXMLTools.formlist(mdb)
+    @test_nowarn ODMXMLTools.formlist(mdb, attrs =  (:OID, :Name), categ = true)
     @test_nowarn ODMXMLTools.itemgrouplist(mdb)
+    @test_nowarn ODMXMLTools.itemgrouplist(mdb; optional = true)
     @test_nowarn ODMXMLTools.itemlist(mdb)
     @test_nowarn ODMXMLTools.itemlist(mdb; optional = true)
     @test_nowarn ODMXMLTools.itemlist(mdb.el)
