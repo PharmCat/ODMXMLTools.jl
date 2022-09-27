@@ -68,7 +68,7 @@ ODMXMLTools.itemgroupcontent
 
 ### ODMXMLTools.itemformcontent
 ```@docs
-ODMXMLTools.itemsformcontent
+ODMXMLTools.itemformcontent
 ```
 
 ### ODMXMLTools.buildmetadata
