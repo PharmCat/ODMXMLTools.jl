@@ -42,6 +42,9 @@ using Test
 
     @test_nowarn ODMXMLTools.studyinfo(odm; io = io)
 
+    #
+    @test_nowarn ODMXMLTools.spss_form_value_labels(mdb, "FORM_1"; variable = :SASFieldName)
+    @test_nowarn ODMXMLTools.spss_form_variable_labels(mdb, "FORM_1"; variable = :SASFieldName)
 
     cdel = ODMXMLTools.findelements(odm, :ClinicalData)
     @test length(cdel) == 2

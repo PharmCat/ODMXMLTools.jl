@@ -1,11 +1,12 @@
 
 abstract type AbstractODMNode end
+abstract type AbstractODMNodeType end
 
-struct ODMNodeType{Symbol}
+struct ODMNodeType{Symbol} <: AbstractODMNodeType
     function ODMNodeType(s::Symbol)
         new{s}()
     end
-    function ODMNodeType(s::Nothing)
+    function ODMNodeType(::Nothing)
         new{:TextNode}()
     end
 end
@@ -570,7 +571,20 @@ function itemgroupcontent(md, oid; kwargs...)
     inds = itemgroupcontent_(md, oid)
     itemlist(inds; kwargs...)
 end
-
+###############################################################################
+# Item form content
+###############################################################################
+function itemformcontent_(md, oid; kwargs...)
+    inds   = AbstractODMNode[]
+    frm    = findelement(md, :FormDef, oid)
+    if isnothing(frm) return inds end
+    iginds = findelements(frm, :ItemGroupRef)
+    for i in iginds
+        igoid = attribute(i, :ItemGroupOID)
+        append!(inds, itemgroupcontent_(md, igoid))
+    end
+    inds
+end
 """
     itemsformcontent(md, oid; optional = false)
 
@@ -579,13 +593,7 @@ Return items (ItemDef) for concrete item form (FormDef) by OID.
 keywords see (itemlist)[@ref].
 """
 function itemformcontent(md, oid; kwargs...)
-    inds   = AbstractODMNode[]
-    frm    = findelement(md, :FormDef, oid)
-    iginds = findelements(frm, :ItemGroupRef)
-    for i in iginds
-        igoid = attribute(i, "ItemGroupOID")
-        append!(inds, itemgroupcontent_(md, igoid))
-    end
+    inds = itemformcontent_(md, oid; kwargs...)
     itemlist(inds; kwargs...)
 end
 ################################################################################
@@ -606,6 +614,25 @@ function buildmetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     stmd
 end
 """
+    buildmetadata(odm::ODMRoot, moid::AbstractString)
+
+Build MetaData from MetaDataVersion.
+"""
+function buildmetadata(odm::ODMRoot, moid::AbstractString)
+    mdv = nothing
+    for i in odm.el
+        if name(i) == :Study
+            mdv = findelement(i, :MetaDataVersion, moid)
+            isnothing(mdv) || break
+        end
+    end
+    if isnothing(mdv) return nothing end 
+    stmd   = StudyMetaData(mdv, AbstractODMNode[])
+    fillstmd_(stmd.el, stmd.metadata, odm)
+    stmd
+end
+#=
+"""
     buildmetadata(mdat::AbstractODMNode)
 
 Build MetaData from MetaDataVersion mdat.
@@ -616,6 +643,7 @@ function buildmetadata(mdat::AbstractODMNode)
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
+=#
 
 """
     codelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode

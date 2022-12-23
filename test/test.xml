@@ -50,7 +50,20 @@
         <ItemRef ItemOID="I_2" OrderNumber="1" Mandatory="Yes" />
       </ItemGroupDef>
       <ItemDef OID="I_2" Name="Item 2" DataType="text" Length="3" SASFieldName="IT2" Comment="Comments 2">
+        <CodeListRef CodeListOID="CL_1"/>
       </ItemDef>
+      <CodeList OID="CL_1" Name="NP" DataType="integer" SASFormatName="NP">
+        <CodeListItem CodedValue="0">
+          <Decode>
+            <TranslatedText>Выполнен</TranslatedText>
+          </Decode>
+        </CodeListItem>
+        <CodeListItem CodedValue="1">
+          <Decode>
+            <TranslatedText>Не применимо</TranslatedText>
+          </Decode>
+        </CodeListItem>
+      </CodeList>
       </MetaDataVersion>
     </Study>
     <ClinicalData StudyOID="ST1" MetaDataVersionOID="v2">
@@ -70,6 +83,17 @@
                 <FormData FormOID="FORM_1">
                     <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
                         <ItemData ItemOID="I_1" Value="FieldValue"/>
+                        <ItemData ItemOID="I_2" Value="1"/>
+                    </ItemGroupData>
+                </FormData>
+            </StudyEventData>
+      </SubjectData>
+      <SubjectData SubjectKey="002">
+            <StudyEventData StudyEventOID="SE_VIZIT1">
+                <FormData FormOID="FORM_1">
+                    <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
+                        <ItemData ItemOID="I_1" Value="FieldValue"/>
+                        <ItemData ItemOID="I_2" Value="3"/>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>

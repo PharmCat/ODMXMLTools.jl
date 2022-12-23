@@ -138,9 +138,278 @@ function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeTyp
     end
 end
 
-
+#=
+An element group consists of one or more element names (or element groups) enclosed in parentheses, 
+and separated with commas or vertical bars. Commas indicate that the elements (or element groups)
+ must occur in the XML sequentially in the order listed in the group. Vertical bars indicate that
+  exactly one of the elements (or element groups) must occur. An element or element group can be 
+  followed by a ? (meaning optional), a * (meaning zero or more occurrences), or a + (meaning one or more occurrences).
+=#
 function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:MetaDataVersion})
+    ks = Set([:OID, :Name, :Description])
+    ns = Set([:Include, :Protocol, :StudyEventDef, :FormDef, :ItemGroupDef, :ItemDef, :CodeList, :ImputationMethod, :Presentation, :ConditionDef, :MethodDef])
+    for k in keys(node.attr)
+        k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
+    end
+    for i in node.el
+        name(i) in ns || push!(log, "$(name(node)): Unknown body node ($(name(i))")
+        cnt = findelements(node, :Include)
+        length(cnt) > 1 && push!(log, "$(name(node)): More than 1 Include elements")
+        cnt = findelements(node, :Protocol)
+        length(cnt) > 1 && push!(log, "$(name(node)): More than 1 Protocol elements")
+    end
+end
 
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Include})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Protocol})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Description})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:StudyEventRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:StudyEventDef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:FormRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:FormDef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ItemGroupRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ItemGroupDef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ItemRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ItemDef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Question})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ExternalQuestion})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:MeasurementUnitRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:RangeCheck})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ErrorMessage})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:CodeListRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Alias})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:CodeList})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:CodeListItem})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Decode})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ExternalCodeList})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:EnumeratedItem})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ArchiveLayout})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:MethodDef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Presentation})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ConditionDef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:FormalExpression})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:AdminData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:User})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:LoginName})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:DisplayName})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:FullName})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:FirstName})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:LastName})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Organization})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Address})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:StreetName})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:City})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:StateProv})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Country})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:PostalCode})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:OtherText})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Email})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Picture})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Pager})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Fax})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Phone})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:LocationRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Certificate})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Location})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:MetaDataVersionRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:SignatureDef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Meaning})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:LegalReason})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ReferenceData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ClinicalData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:SubjectData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:StudyEventData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:FormData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ItemGroupData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ItemData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ItemData})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ArchiveLayoutRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:AuditRecord})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:UserRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:DateTimeStamp})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:ReasonForChange})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:SourceID})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Signature})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:SignatureRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Annotation})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Comment})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Flag})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:FlagValue})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:FlagType})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:InvestigatorRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:SiteRef})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:AuditRecords})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Signatures})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Annotations})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:Association})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{:KeySet})
+end
+
+function checknode!(log::AbstractVector, node::AbstractODMNode, type::ODMNodeType{Symbol("ds:Signature")})
 end
 
 function countnodenames(node, nodename)

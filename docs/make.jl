@@ -9,9 +9,12 @@ makedocs(
         pages = [
             "Home" => "index.md",
             "Examples" => "examples.md",
-            "ODM" => ["Form" => "form.md",
-                "ItemGroup" => "itemgroup.md",
-                "Item" => "item.md"],
+            "ODM" => [
+                "ODM" => ".//odm//odm.md",
+                "Form" => ".//odm//form.md",
+                "ItemGroup" => ".//odm//itemgroup.md",
+                "Item" => ".//odm//item.md",
+                "ClinicalData"=>".//odm//clinicaldata.md"],
             "API" => "api.md"
             ],
         )

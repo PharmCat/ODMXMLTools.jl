@@ -20,6 +20,12 @@ This program comes with absolutely no warranty. No liability is accepted for any
 import Pkg; Pkg.add(url="https://github.com/PharmCat/ODMXMLTools.jl.git")
 ```
 
+Or from registry:
+
+```
+import Pkg; Pkg.add("ODMXMLTools")
+```
+
 ## Contents
 
 ```@contents
