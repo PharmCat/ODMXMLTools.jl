@@ -64,4 +64,15 @@
             </StudyEventData>
       </SubjectData>
     </ClinicalData>
+    <ClinicalData StudyOID="DEFS" MetaDataVersionOID="v2">
+      <SubjectData SubjectKey="001">
+            <StudyEventData StudyEventOID="SE_VIZIT1">
+                <FormData FormOID="FORM_1">
+                    <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
+                        <ItemData ItemOID="I_1" Value="FieldValue"/>
+                    </ItemGroupData>
+                </FormData>
+            </StudyEventData>
+      </SubjectData>
+    </ClinicalData>
 </ODM>

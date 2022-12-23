@@ -814,12 +814,15 @@ Return clinical data table in long formal.
 
 """
 function clinicaldatatable(odm::ODMRoot; kwargs...)
-    cdl = clinicaldatalist(odm)
-    (size(cld, 1) == 0) && error("ClinicalData not found")
-    df = clinicaldatatable(findclinicaldata(odm, cdl[1, 1], cdl[1, 2]); kwargs...)
-    if size(cdl, 1) > 1
-        for i = 2:size(cdl, 1)
-            append!(df, clinicaldatatable(findclinicaldata(odm, cdl[i, 1], cdl[i, 2]); kwargs...))
+    clindl = clinicaldatalist(odm)
+
+    if size(clindl, 1) == 0 
+        error("ClinicalData not found") 
+    end
+    df = clinicaldatatable(findclinicaldata(odm, clindl[1, 1], clindl[1, 2]); kwargs...)
+    if size(clindl, 1) > 1
+        for i = 2:size(clindl, 1)
+            append!(df, clinicaldatatable(findclinicaldata(odm, clindl[i, 1], clindl[i, 2]); kwargs...))
         end
     end
     df
@@ -967,4 +970,43 @@ function studyinfo_(st::AbstractODMNode)
         str *= "    No\n"
     end
     str
+end
+
+################################################################################
+# Modification
+################################################################################
+"""
+    deletestudy!(odm::ODMRoot, oid::AbstractString)
+
+Delete study by OID.
+"""
+function deletestudy!(odm::ODMRoot, oid::AbstractString)
+    inds = Int[]
+    for i in 1:length(odm.el)
+        if name(odm.el[i]) == :Study && attribute(odm.el[i], :OID) == oid
+            push!(inds, i)
+        end
+    end
+    if length(inds) > 0
+        deleteat!(odm.el, inds)
+    end
+    odm
+end
+
+"""
+    deletestudy!(odm::ODMRoot, soid::AbstractString)
+
+Delete clinical data  by StudyOID (`soid`).
+"""
+function deleteclinicaldata!(odm::ODMRoot, soid::AbstractString)
+    inds = Int[]
+    for i in 1:length(odm.el)
+        if name(odm.el[i]) == :ClinicalData && attribute(odm.el[i], :StudyOID) == soid
+            push!(inds, i)
+        end
+    end
+    if length(inds) > 0
+        deleteat!(odm.el, inds)
+    end
+    odm
 end
