@@ -1,4 +1,98 @@
+abstract type  AbstractSPSSSyntax end
 
+struct SPSSVariableLabels <: AbstractSPSSSyntax
+    v::Vector
+end
+
+function Base.show(io::IO, spssc::SPSSVariableLabels)
+    print(io, "VARIABLE LABELS")
+    for i = 1:length(spssc.v)
+        print(io, "\n$(spssc.v[i][1]) '$(spssc.v[i][2])'")
+    end
+    print(io, ".")
+end
+
+struct  SPSSValueLabels
+    v::Vector
+end
+
+function Base.show(io::IO, spssc::SPSSValueLabels)
+    print(io, "VALUE LABELS")
+    print(io, "\n", spssc.v[1][1])
+    v = spssc.v[1][2]
+    for i = 1:length(v)
+        print(io, "\n$(v[i][1]) '$(v[i][2])'")
+    end
+    if length(spssc.v) > 1
+        for i = 2:length(spssc.v)
+            print(io, "/\n", spssc.v[i][1])
+            v = spssc.v[i][2]
+            for j = 1:length(v)
+                print(io, "\n$(v[j][1]) '$(v[j][2])'")
+            end
+        end
+    end
+    print(io, ".")
+end
+
+
+"""
+    spss_form_variable_labels(mdb, form; variable, labels)
+
+SPSS command to set variable labels.
+
+`variable` - varable names attribute, `SASFieldName` by default.
+
+`labels` - labels names attribute, `Comment` by default.
+
+"""
+function spss_form_variable_labels(mdb, form; variable = :SASFieldName, labels = :Comment)
+    df = itemformcontent_(mdb, form; optional = true)
+    v  = Vector{Pair}(undef, length(df))
+    for i = 1:size(df, 1)
+        v[i] = attribute(df[i], variable) => attribute(df[i], labels)
+    end
+    SPSSVariableLabels(v)
+end
+"""
+    spss_form_variable_labels(mdb, form, `pairs`; kwargs...)
+
+SPSS command to set variable labels.
+
+Append pair vector `pairs` at the end. 
+"""
+function spss_form_variable_labels(mdb, form, pairs; kwargs...)
+    lbls = spss_form_variable_labels(mdb, form; kwargs...)
+    append!(lbls.v, pairs)
+    lbls
+end
+
+"""
+    spss_form_value_labels(mdb, form; variable = :SASFieldName)
+    
+SPSS command to set value labels.
+
+`variable` - varable names attribute, `SASFieldName` by default.
+"""
+function spss_form_value_labels(mdb, form; variable = :SASFieldName)
+    items = itemformcontent_(mdb, form)
+    v  = Vector{Pair}(undef, 0)
+    for i = 1:length(items)
+        cid = findelement(items[i], :CodeListRef)
+        if !isnothing(cid)
+            p   = Vector{Pair}(undef, 0) 
+            cl  = findelement(mdb, :CodeList, attribute(cid, :CodeListOID))
+            cli = findelements(cl, :CodeListItem)
+            for j = 1:length(cli)
+                d  = findelement(cli[j], :Decode)
+                tt = findelement(d, :TranslatedText)
+                push!(p, attribute(cli[j], :CodedValue) => content(tt))
+            end
+            push!(v, attribute(items[i], variable) => p)
+        end
+    end
+    SPSSValueLabels(v)
+end
 #=
 struct SPSSExport
     df::DataFrame

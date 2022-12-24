@@ -1,11 +1,12 @@
 
 abstract type AbstractODMNode end
+abstract type AbstractODMNodeType end
 
-struct ODMNodeType{Symbol}
+struct ODMNodeType{Symbol} <: AbstractODMNodeType
     function ODMNodeType(s::Symbol)
         new{s}()
     end
-    function ODMNodeType(s::Nothing)
+    function ODMNodeType(::Nothing)
         new{:TextNode}()
     end
 end
@@ -570,7 +571,20 @@ function itemgroupcontent(md, oid; kwargs...)
     inds = itemgroupcontent_(md, oid)
     itemlist(inds; kwargs...)
 end
-
+###############################################################################
+# Item form content
+###############################################################################
+function itemformcontent_(md, oid; kwargs...)
+    inds   = AbstractODMNode[]
+    frm    = findelement(md, :FormDef, oid)
+    if isnothing(frm) return inds end
+    iginds = findelements(frm, :ItemGroupRef)
+    for i in iginds
+        igoid = attribute(i, :ItemGroupOID)
+        append!(inds, itemgroupcontent_(md, igoid))
+    end
+    inds
+end
 """
     itemsformcontent(md, oid; optional = false)
 
@@ -579,13 +593,7 @@ Return items (ItemDef) for concrete item form (FormDef) by OID.
 keywords see (itemlist)[@ref].
 """
 function itemformcontent(md, oid; kwargs...)
-    inds   = AbstractODMNode[]
-    frm    = findelement(md, :FormDef, oid)
-    iginds = findelements(frm, :ItemGroupRef)
-    for i in iginds
-        igoid = attribute(i, "ItemGroupOID")
-        append!(inds, itemgroupcontent_(md, igoid))
-    end
+    inds = itemformcontent_(md, oid; kwargs...)
     itemlist(inds; kwargs...)
 end
 ################################################################################
@@ -606,6 +614,25 @@ function buildmetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     stmd
 end
 """
+    buildmetadata(odm::ODMRoot, moid::AbstractString)
+
+Build MetaData from MetaDataVersion.
+"""
+function buildmetadata(odm::ODMRoot, moid::AbstractString)
+    mdv = nothing
+    for i in odm.el
+        if name(i) == :Study
+            mdv = findelement(i, :MetaDataVersion, moid)
+            isnothing(mdv) || break
+        end
+    end
+    if isnothing(mdv) return nothing end 
+    stmd   = StudyMetaData(mdv, AbstractODMNode[])
+    fillstmd_(stmd.el, stmd.metadata, odm)
+    stmd
+end
+#=
+"""
     buildmetadata(mdat::AbstractODMNode)
 
 Build MetaData from MetaDataVersion mdat.
@@ -616,6 +643,7 @@ function buildmetadata(mdat::AbstractODMNode)
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
+=#
 
 """
     codelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
@@ -814,12 +842,15 @@ Return clinical data table in long formal.
 
 """
 function clinicaldatatable(odm::ODMRoot; kwargs...)
-    cdl = clinicaldatalist(odm)
-    (size(cld, 1) == 0) && error("ClinicalData not found")
-    df = clinicaldatatable(findclinicaldata(odm, cdl[1, 1], cdl[1, 2]); kwargs...)
-    if size(cdl, 1) > 1
-        for i = 2:size(cdl, 1)
-            append!(df, clinicaldatatable(findclinicaldata(odm, cdl[i, 1], cdl[i, 2]); kwargs...))
+    clindl = clinicaldatalist(odm)
+
+    if size(clindl, 1) == 0 
+        error("ClinicalData not found") 
+    end
+    df = clinicaldatatable(findclinicaldata(odm, clindl[1, 1], clindl[1, 2]); kwargs...)
+    if size(clindl, 1) > 1
+        for i = 2:size(clindl, 1)
+            append!(df, clinicaldatatable(findclinicaldata(odm, clindl[i, 1], clindl[i, 2]); kwargs...))
         end
     end
     df
@@ -967,4 +998,43 @@ function studyinfo_(st::AbstractODMNode)
         str *= "    No\n"
     end
     str
+end
+
+################################################################################
+# Modification
+################################################################################
+"""
+    deletestudy!(odm::ODMRoot, oid::AbstractString)
+
+Delete study by OID.
+"""
+function deletestudy!(odm::ODMRoot, oid::AbstractString)
+    inds = Int[]
+    for i in 1:length(odm.el)
+        if name(odm.el[i]) == :Study && attribute(odm.el[i], :OID) == oid
+            push!(inds, i)
+        end
+    end
+    if length(inds) > 0
+        deleteat!(odm.el, inds)
+    end
+    odm
+end
+
+"""
+    deletestudy!(odm::ODMRoot, soid::AbstractString)
+
+Delete clinical data  by StudyOID (`soid`).
+"""
+function deleteclinicaldata!(odm::ODMRoot, soid::AbstractString)
+    inds = Int[]
+    for i in 1:length(odm.el)
+        if name(odm.el[i]) == :ClinicalData && attribute(odm.el[i], :StudyOID) == soid
+            push!(inds, i)
+        end
+    end
+    if length(inds) > 0
+        deleteat!(odm.el, inds)
+    end
+    odm
 end

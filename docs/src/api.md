@@ -110,3 +110,25 @@ ODMXMLTools.findelement
 ```@docs
 ODMXMLTools.findelements
 ```
+
+### ODMXMLTools.deletestudy!
+```@docs
+ODMXMLTools.deletestudy!
+```
+
+### ODMXMLTools.deleteclinicaldata!
+```@docs
+ODMXMLTools.deleteclinicaldata!
+```
+
+## SPSS
+
+### ODMXMLTools.spss_form_variable_labels
+```@docs
+ODMXMLTools.spss_form_variable_labels
+```
+
+### ODMXMLTools.spss_form_value_labels
+```@docs
+ODMXMLTools.spss_form_value_labels
+```
