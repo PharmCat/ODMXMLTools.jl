@@ -21,14 +21,16 @@ function Base.show(io::IO, spssc::SPSSValueLabels)
     print(io, "\n", spssc.v[1][1])
     v = spssc.v[1][2]
     for i = 1:length(v)
-        print(io, "\n$(v[i][1]) '$(v[i][2])'")
+        if isa(v[i][1], String) val = "'$(v[i][1])'" else val = v[i][1] end
+        print(io, "\n$(val) '$(v[i][2])'")
     end
     if length(spssc.v) > 1
         for i = 2:length(spssc.v)
             print(io, "/\n", spssc.v[i][1])
             v = spssc.v[i][2]
             for j = 1:length(v)
-                print(io, "\n$(v[j][1]) '$(v[j][2])'")
+                if isa(v[j][1], String) val = "'$(v[j][1])'" else val = v[j][1] end
+                print(io, "\n$(val) '$(v[j][2])'")
             end
         end
     end
@@ -83,10 +85,29 @@ function spss_form_value_labels(mdb, form; variable = :SASFieldName)
             p   = Vector{Pair}(undef, 0) 
             cl  = findelement(mdb, :CodeList, attribute(cid, :CodeListOID))
             cli = findelements(cl, :CodeListItem)
+            
             for j = 1:length(cli)
                 d  = findelement(cli[j], :Decode)
                 tt = findelement(d, :TranslatedText)
-                push!(p, attribute(cli[j], :CodedValue) => content(tt))
+                strcval = attribute(cli[j], :CodedValue)
+                if attribute(cl, :DataType) == "integer"
+                    try
+                        cval = parse(Int, strcval)
+                    catch
+                        @warn "Can't parse integer value $strcval for item OID $(attribute(items[i], :OID)), string value used."
+                        cval = strcval
+                    end
+                elseif attribute(cl, :DataType) == "float"
+                    try
+                        cval = parse(Float64, strcval)
+                    catch
+                        @warn "Can't parse float value $strcval for item OID $(attribute(items[i], :OID)), string value used."
+                        cval = strcval
+                    end
+                else
+                    cval = strcval
+                end
+                push!(p, cval => content(tt))
             end
             push!(v, attribute(items[i], variable) => p)
         end

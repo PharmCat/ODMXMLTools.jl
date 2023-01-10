@@ -260,6 +260,29 @@ module ODMXMLTools
 	:ItemDataTime
 	:ItemDataURI])
 
+	const DATATYPES = Set(["text"
+	 "integer" 
+	 "float"
+	 "date"
+	 "time"
+	 "datetime" 
+	 "string"
+	 "boolean"
+	 "double"
+	 "hexBinary"
+	 "base64Binary"
+	 "hexFloat"
+	 "base64Float"
+	 "partialDate"
+	 "partialTime"
+	 "partialDatetime"
+	 "durationDatetime"
+	 "intervalDatetime"
+	 "incompleteDatetime"
+	 "incompleteDate"
+	 "incompleteTime"
+	 "URI"])
+
     const CHNS = Dict(
     :Symbol => [:TranslatedText],
     )

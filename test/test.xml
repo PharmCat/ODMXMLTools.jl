@@ -26,7 +26,25 @@
         <ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />
       </ItemGroupDef>
       <ItemDef OID="I_1" Name="Item 1" DataType="text" Length="3" SASFieldName="IT1" Comment="Comments">
+        <CodeListRef CodeListOID="CL_0"/>
       </ItemDef>
+      <CodeList OID="CL_0" Name="NP" DataType="text" SASFormatName="NP">
+        <CodeListItem CodedValue="Да">
+          <Decode>
+            <TranslatedText>Выполнен</TranslatedText>
+          </Decode>
+        </CodeListItem>
+        <CodeListItem CodedValue="Нет">
+          <Decode>
+            <TranslatedText>Не выполнен</TranslatedText>
+          </Decode>
+        </CodeListItem>
+        <CodeListItem CodedValue="Не применимо">
+          <Decode>
+            <TranslatedText>Не применимо</TranslatedText>
+          </Decode>
+        </CodeListItem>
+      </CodeList>
     </MetaDataVersion>
     </Study>
     <Study OID="ST1">
@@ -49,7 +67,7 @@
         <ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />
         <ItemRef ItemOID="I_2" OrderNumber="1" Mandatory="Yes" />
       </ItemGroupDef>
-      <ItemDef OID="I_2" Name="Item 2" DataType="text" Length="3" SASFieldName="IT2" Comment="Comments 2">
+      <ItemDef OID="I_2" Name="Item 2" DataType="integer" Length="3" SASFieldName="IT2" Comment="Comments 2">
         <CodeListRef CodeListOID="CL_1"/>
       </ItemDef>
       <CodeList OID="CL_1" Name="NP" DataType="integer" SASFormatName="NP">
