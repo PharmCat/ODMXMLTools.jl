@@ -146,6 +146,14 @@ end
 function name(n::ODMNode)
     getfield(n, :name)
 end
+function name(n::ODMTextNode)
+    nothing
+end
+
+function havename(node::AbstractODMNode)
+    !isa(node, ODMTextNode)
+end
+
 
 isStudyEventData(node::AbstractODMNode) = name(node) == :StudyEventData
 isFormData(node::AbstractODMNode) = name(node) == :FormData
@@ -157,9 +165,6 @@ isStudy(node::AbstractODMNode) = name(node) == :Study
 isClinicalData(node::AbstractODMNode) = name(node) == :ClinicalData
 
 
-function name(n::ODMTextNode)
-    nothing
-end
 function have_attr(n::AbstractODMNode, attr::Symbol)
     if  haskey(getfield(n, :attr), attr) return true else return false end
 end

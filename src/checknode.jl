@@ -490,7 +490,9 @@ function nodenameslist(node)
     set = Set{Symbol}()
     ch = children(node)
     for i in ch
-        push!(set, name(i))
+        if havename(i)
+            push!(set, name(i))
+        end
     end
     set
 end
