@@ -1,4 +1,3 @@
-
 abstract type AbstractODMNode end
 abstract type AbstractODMNodeType end
 
@@ -36,7 +35,7 @@ struct ODMTextNode <: AbstractODMNode
 end
 struct StudyMetaData <: AbstractODMNode
     metadata::ODMNode
-    el::Vector
+    el::Vector{AbstractODMNode}
 end
 
 function Base.show(io::IO, n::T) where T <: AbstractODMNode
@@ -56,10 +55,27 @@ end
 function AbstractTrees.children(x::T) where T <: AbstractODMNode
     x.el
 end
-function AbstractTrees.children(i::ODMTextNode)
+function AbstractTrees.children(::ODMTextNode)
     []
 end
-    #AbstractTrees.nodetype(::IntTree) = IntTree
+#=
+function AbstractTrees.childtype(n::AbstractODMNode)
+    eltype(n.el)
+end
+=#
+#=
+function AbstractTrees.ischild(node1::AbstractODMNode, node2::AbstractODMNode; equiv=(===))
+    in(node1, node2.el)
+end
+=#
+function AbstractTrees.isroot(x::ODMRoot)
+    true
+end
+function AbstractTrees.isroot(x::AbstractODMNode)
+    false
+end
+
+#AbstractTrees.nodetype(::IntTree) = IntTree
 
 function makenode(str, attr)
     #symb = Symbol(str)

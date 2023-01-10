@@ -2,7 +2,8 @@ module ODMXMLTools
     using  EzXML, DataFrames, AbstractTrees
     using CategoricalArrays
     #using Dates
-    import AbstractTrees: children
+	import AbstractTrees
+    import AbstractTrees: children, isroot
     import Base: show, findfirst, findall
 
     export importxml,
@@ -20,7 +21,8 @@ module ODMXMLTools
     itemgroupcontent,
     validateodm,
     clinicaldatatable,
-    clinicaldatalist
+    clinicaldatalist,
+	children
 
     StrOrSym = Union{String, Symbol}
 

@@ -14,7 +14,7 @@ CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 
 DataFrames = "1"
 EzXML = "1.1"
-AbstractTrees = "0.3"
+AbstractTrees = "0.3, 0.4"
 CategoricalArrays = "0.10"
 julia = "1"
 

@@ -58,4 +58,12 @@ using Test
     ODMXMLTools.deletestudy!(odm, "DEFS")
     cdel = ODMXMLTools.findelements(odm, :Study)
     @test length(cdel) == 1
+
+    c = ODMXMLTools.children(odm)
+    @test c == odm.el
+    @test ODMXMLTools.isroot(odm) == true
+    @test ODMXMLTools.isroot(c[1]) == false
+
+    #@test ODMXMLTools.ischild(c[1], odm)
+
 end
