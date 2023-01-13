@@ -39,16 +39,16 @@ end
 
 
 """
-    spss_form_variable_labels(mdb, form; variable, labels)
+spss_form_variable_labels(mdb, form; variable = :OID, labels = :Comment)
 
 SPSS command to set variable labels.
 
-`variable` - varable names attribute, `SASFieldName` by default.
+`variable` - varable names attribute, `OID` by default.
 
 `labels` - labels names attribute, `Comment` by default.
 
 """
-function spss_form_variable_labels(mdb, form; variable = :SASFieldName, labels = :Comment)
+function spss_form_variable_labels(mdb, form; variable = :OID, labels = :Comment)
     df = itemformcontent_(mdb, form; optional = true)
     v  = Vector{Pair}(undef, length(df))
     for i = 1:size(df, 1)
@@ -70,13 +70,13 @@ function spss_form_variable_labels(mdb, form, pairs; kwargs...)
 end
 
 """
-    spss_form_value_labels(mdb, form; variable = :SASFieldName)
+    spss_form_value_labels(mdb, form; variable = :OID)
     
 SPSS command to set value labels.
 
-`variable` - varable names attribute, `SASFieldName` by default.
+`variable` - varable names attribute, `OID` by default.
 """
-function spss_form_value_labels(mdb, form; variable = :SASFieldName)
+function spss_form_value_labels(mdb, form; variable = :OID)
     items = itemformcontent_(mdb, form)
     v  = Vector{Pair}(undef, 0)
     for i = 1:length(items)

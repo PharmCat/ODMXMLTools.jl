@@ -65,10 +65,13 @@
         <Include StudyOID="DEFS" MetaDataVersionOID="v1"/>
       <ItemGroupDef OID="IG_1" Name="Item group 1" Repeating="No" SASDatasetName="UNGRP">
         <ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />
-        <ItemRef ItemOID="I_2" OrderNumber="1" Mandatory="Yes" />
+        <ItemRef ItemOID="I_2" OrderNumber="2" Mandatory="Yes" />
+        <ItemRef ItemOID="I_3" OrderNumber="3" Mandatory="Yes" />
       </ItemGroupDef>
       <ItemDef OID="I_2" Name="Item 2" DataType="integer" Length="3" SASFieldName="IT2" Comment="Comments 2">
         <CodeListRef CodeListOID="CL_1"/>
+      </ItemDef>
+      <ItemDef OID="I_3" Name="Item 3" DataType="integer" Length="3" SASFieldName="IT3" Comment="Comments 3">
       </ItemDef>
       <CodeList OID="CL_1" Name="NP" DataType="integer" SASFormatName="NP">
         <CodeListItem CodedValue="0">
@@ -90,6 +93,8 @@
                 <FormData FormOID="FORM_1">
                     <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
                         <ItemData ItemOID="I_1" Value="FieldValue"/>
+                        <ItemData ItemOID="I_2" Value="2"/>
+                        <ItemDataInteger ItemOID="I_3">4</ItemDataInteger>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>
@@ -102,6 +107,7 @@
                     <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
                         <ItemData ItemOID="I_1" Value="FieldValue"/>
                         <ItemData ItemOID="I_2" Value="1"/>
+                        <ItemDataInteger ItemOID="I_3">1</ItemDataInteger>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>
@@ -112,6 +118,7 @@
                     <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
                         <ItemData ItemOID="I_1" Value="FieldValue"/>
                         <ItemData ItemOID="I_2" Value="3"/>
+                        <ItemDataInteger ItemOID="I_3">2</ItemDataInteger>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>
