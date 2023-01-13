@@ -35,6 +35,8 @@ using Test
 
     @test_nowarn ODMXMLTools.validateodm(odm)
 
+    @test_nowarn ODMXMLTools.clinicaldatatable(odm, addstudyid= true, addstudyidcol = true)
+
     cdat = ODMXMLTools.findclinicaldata(odm, "ST1", "v2")
 
     @test_nowarn ODMXMLTools.clinicaldatatable(cdat)

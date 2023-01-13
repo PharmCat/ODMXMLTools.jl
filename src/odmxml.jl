@@ -179,6 +179,17 @@ function appendelements!(inds::AbstractVector, n::AbstractODMNode, nname::Symbol
     end
     inds
 end
+
+function appendelements!(inds::AbstractVector, n::AbstractODMNode, nname::Union{Set{Symbol}, AbstractVector{Symbol}})
+    for i in n.el
+        if name(i) in nname
+            push!(inds, i)
+        end
+    end
+    inds
+end
+
+
 function content(n::ODMTextNode)
     getfield(n, :content)
 end
@@ -190,6 +201,7 @@ function content(n::AbstractODMNode)
     end
     nothing
 end
+
 
 t_collect(a::Tuple) = [i for i in a];
 t_collect(a::Vector) = a;
@@ -728,27 +740,58 @@ end
 
 
 """
-    clinicaldatatable(cd::AbstractODMNode; itemgroup = nothing)
+    clinicaldatatable(cd::AbstractODMNode;
+        itemgroup = nothing,
+        form = nothing,
+        item::Union{Nothing, AbstractString, <: AbstractVector{<:AbstractString}} = nothing,
+        categ = false, 
+        addstudyid = false,
+        addstudyidcol = false,
+        idlnames = nothing)
 
 Return clinical data table in long formal. `cd` should be ClinicalData.
+
+* `itemgroup` - only this ItemGroupOID;
+* `form` - only this FormOID;
+* `item` - only this ItemOID;
+* `categ` - make collumns categorical;
+* `addstudyid` - add StudyOID as prefix to SubjectKey: "StudyOID_SubjectKey";
+* `addstudyidcol` - add StudyOID as collumn to dataframe;
+* `idlnames` - only this types of data will be collected, for example: ItemData, ItemDataInteger, ets (if `nothing`` - all will be collected). 
 """
 function clinicaldatatable(cd::AbstractODMNode;
         itemgroup = nothing,
         form = nothing,
         item::Union{Nothing, AbstractString, <: AbstractVector{<:AbstractString}} = nothing,
-        categ = false, )
+        categ = false, 
+        addstudyid = false,
+        addstudyidcol = false,
+        idlnames = nothing)
+    
+        
     if name(cd) != :ClinicalData error("This is not ClinicalData") end
+    # For TypedData
+    datatype = String
     #df = DataFrame(SubjectKey = String[], StudyEventOID = CategoricalArray(String[]), FormOID = CategoricalArray(String[]), ItemGroupOID = CategoricalArray(String[]), ItemGroupRepeatKey = CategoricalArray(String[]), ItemOID = CategoricalArray(String[]), Value = String[])
-    df = DataFrame(SubjectKey = String[], StudyEventOID = String[], FormOID = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = String[])
+    df = DataFrame(SubjectKey = String[], StudyEventOID = String[], FormOID = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = datatype[])
     sdl = findelements(cd, :SubjectData)
     edl = AbstractODMNode[]
     fdl = AbstractODMNode[]
     gdl = AbstractODMNode[]
     idl = AbstractODMNode[]
 
+    if isnothing(idlnames)
+        idlnames = pushfirst!(collect(ITEMDATATYPE), :ItemData)
+    end
+
     if isa(item, AbstractString) item = [item] end
     #sdl = Iterators.filter(isSubjectData, cd.el)
     for s in sdl
+        if addstudyid
+            subjid = attribute(cd, :StudyOID)*"_"*attribute(s, :SubjectKey)
+        else
+            subjid = attribute(s, :SubjectKey)
+        end
         resize!(edl, 0)
         appendelements!(edl, s, :StudyEventData)
         #edl = Iterators.filter(isStudyEventData, s.el)
@@ -768,19 +811,34 @@ function clinicaldatatable(cd::AbstractODMNode;
                         if attribute(f, :FormOID) != form continue end
                     end
                     resize!(idl, 0)
-                    appendelements!(idl, g, :ItemData)
-                    #idl = Iterators.filter(isItemData, g.el)
+                    appendelements!(idl, g, idlnames)
+                    #idl = Iterators.filter(isItemData, g.el) 
                     for i in idl
                         if !isnothing(item)
                             if !(attribute(i, :ItemOID) in item) continue end
                         end
-                        push!(df, (attribute(s, :SubjectKey),
-                        attribute(e, :StudyEventOID),
-                        attribute(f, :FormOID),
-                        attribute(g, :ItemGroupOID),
-                        attribute(g, :ItemGroupRepeatKey),
-                        attribute(i, :ItemOID),
-                        attribute(i, :Value)))
+                        if isItemData(i)
+                            push!(df, (subjid,
+                            attribute(e, :StudyEventOID),
+                            attribute(f, :FormOID),
+                            attribute(g, :ItemGroupOID),
+                            attribute(g, :ItemGroupRepeatKey),
+                            attribute(i, :ItemOID),
+                            attribute(i, :Value)))
+                        else
+                            val = content(i)
+                            if isnothing(val)
+                                @warn "ItemData[TYPE] content is empty"
+                                val = ""
+                            end
+                            push!(df, (subjid,
+                            attribute(e, :StudyEventOID),
+                            attribute(f, :FormOID),
+                            attribute(g, :ItemGroupOID),
+                            attribute(g, :ItemGroupRepeatKey),
+                            attribute(i, :ItemOID),
+                            val))       
+                        end
                     end
                 end
             end
@@ -792,6 +850,9 @@ function clinicaldatatable(cd::AbstractODMNode;
         transform!(df, :ItemGroupOID => categorical, renamecols=false)
         transform!(df, :ItemGroupRepeatKey => categorical, renamecols=false)
         transform!(df, :ItemOID => categorical, renamecols=false)
+    end
+    if addstudyidcol
+        insertcols!(df, 1, :StudyOID=>fill(attribute(cd, :StudyOID), size(df, 1)); copycols=false)
     end
     df
 end
