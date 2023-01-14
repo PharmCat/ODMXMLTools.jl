@@ -14,8 +14,9 @@ struct ODMRoot <: AbstractODMNode
     name::Symbol
     attr::Dict{Symbol, String}
     el::Vector{AbstractODMNode}
-    function ODMRoot(attr)
-        new(:ODM, attr, AbstractODMNode[])
+    ns::Vector
+    function ODMRoot(attr, ns)
+        new(:ODM, attr, AbstractODMNode[], ns)
     end
 end
 
@@ -100,7 +101,8 @@ function importxml(file::AbstractString)
     isfile(file) || error("File not found!")
     xdoc  = readxml(file)
     xodm  = root(xdoc)
-    odm   = ODMRoot(attributes_dict(xodm))
+    ns    = namespaces(xodm)
+    odm   = ODMRoot(attributes_dict(xodm), ns)
     importxml_(odm, xodm)
     odm
 end
@@ -254,6 +256,25 @@ end
 Base.findfirst(n::AbstractODMNode, args...) = findelement(n, args...)
 #Base.findfirst(n::AbstractODMNode, nname::Symbol, oid::AbstractString) = findelement(n, nname, oid)
 
+function findelements_(n, nname::Symbol)
+    inds = AbstractODMNode[]
+    for i in n
+        if name(i) == nname
+            push!(inds, i)
+        end
+    end
+    inds
+end
+
+function findelements_(n, nnames::Vector{Symbol})
+    inds = AbstractODMNode[]
+    for i in n.el
+        if name(i) in nnames
+            push!(inds, i)
+        end
+    end
+    inds
+end
 """
     findelements(n::AbstractODMNode, nname::Symbol)
 
@@ -413,14 +434,7 @@ function eventlist(md::AbstractODMNode; optional = false, attrs = nothing, categ
         end
     end
     df = df_list(md, :StudyEventDef, attrs)
-    #=
-    df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), t_collect(attrs))
-    for i in md.el
-        if name(i) == :StudyEventDef
-            push!(df, attributes(i, attrs))
-        end
-    end
-    =#
+
     if categ
         transform!(df, :OID => categorical, renamecols=false)
     end
