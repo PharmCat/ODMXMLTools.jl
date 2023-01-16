@@ -5,120 +5,253 @@
   Description="FULL"
   FileType="Snapshot"
   ODMVersion="1.3">
-    <Study OID="DEFS">
-      <GlobalVariables>
-        <StudyName>Study 1</StudyName>
-        <CurrentColor>Blue</CurrentColor>
-        <StudyDescription>Study 1 Description</StudyDescription>
-        <ProtocolName>Protocol Number</ProtocolName>
-      </GlobalVariables>
-      <MetaDataVersion OID="v1" Name="Version_v1">
-      <Protocol>
-        <StudyEventRef StudyEventOID="SE_VIZIT1" OrderNumber="1" Mandatory="Yes" />
-      </Protocol>
-      <StudyEventDef OID="SE_VIZIT1" Name="Vizit 1" Repeating="No" Type="Scheduled">
-        <FormRef FormOID="FORM_1" Mandatory="Yes" />
-      </StudyEventDef>
-      <FormDef OID="FORM_1" Name="Form 1" Repeating="No">
-        <ItemGroupRef ItemGroupOID="IG_1" Mandatory="Yes" />
-      </FormDef>
-      <ItemGroupDef OID="IG_1" Name="Item group 1" Repeating="No" SASDatasetName="UNGRP">
-        <ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />
-      </ItemGroupDef>
-      <ItemDef OID="I_1" Name="Item 1" DataType="text" Length="3" SASFieldName="IT1" Comment="Comments">
-        <CodeListRef CodeListOID="CL_0"/>
-      </ItemDef>
-      <CodeList OID="CL_0" Name="NP" DataType="text" SASFormatName="NP">
-        <CodeListItem CodedValue="Да">
-          <Decode>
-            <TranslatedText>Выполнен</TranslatedText>
-          </Decode>
-        </CodeListItem>
-        <CodeListItem CodedValue="Нет">
-          <Decode>
-            <TranslatedText>Не выполнен</TranslatedText>
-          </Decode>
-        </CodeListItem>
-        <CodeListItem CodedValue="Не применимо">
-          <Decode>
-            <TranslatedText>Не применимо</TranslatedText>
-          </Decode>
-        </CodeListItem>
-      </CodeList>
-    </MetaDataVersion>
+	<Study OID="TEMPLATE_ST_01">
+		<GlobalVariables>
+			<StudyName>Template 1</StudyName>
+			<CurrentColor>Black</CurrentColor>
+			<StudyDescription>This is basic form template</StudyDescription>
+			<ProtocolName>Template</ProtocolName>
+		</GlobalVariables>
+		<MetaDataVersion OID="mvd_tpl_1" Name="Tpl_Version_v1">
+			<FormDef OID="FORM_VD_1" Name="Vital data" Repeating="No">
+				<ItemGroupRef ItemGroupOID="VIT_IG_1" Mandatory="Yes" />
+			</FormDef>
+			<ItemGroupDef OID="VIT_IG_1" Name="Vital data" Repeating="No" SASDatasetName="VIT_G01">
+				<ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />
+				<ItemRef ItemOID="I_2" OrderNumber="2" Mandatory="Yes" />
+				<ItemRef ItemOID="I_3" OrderNumber="3" Mandatory="Yes" />
+			</ItemGroupDef>
+			<ItemDef OID="I_1" Name="SAD" DataType="integer" Length="3" SASFieldName="SAD" Comment="Systolic BP"></ItemDef>
+			<ItemDef OID="I_2" Name="DAD" DataType="integer" Length="3" SASFieldName="DAD" Comment="Diastolic BP"></ItemDef>
+			<ItemDef OID="I_3" Name="HR" DataType="integer" Length="3" SASFieldName="HR" Comment="Heart rate"></ItemDef>
+		</MetaDataVersion>
     </Study>
-    <Study OID="ST1">
-      <GlobalVariables>
-        <StudyName>Study 1</StudyName>
-        <CurrentColor>Blue</CurrentColor>
-        <StudyDescription>Study 1 Description</StudyDescription>
-        <ProtocolName>Protocol Number</ProtocolName>
-      </GlobalVariables>
-      <BasicDefinitions>
-            <MeasurementUnit OID="MU_0000001" Name="уд/мин">
+    <Study OID="ST_1_1">
+		<GlobalVariables>
+			<StudyName>Study 1</StudyName>
+			<CurrentColor>Blue</CurrentColor>
+			<StudyDescription>Study 1 Description</StudyDescription>
+			<ProtocolName>Protocol Number</ProtocolName>
+		</GlobalVariables>
+		<MetaDataVersion OID="mdv_1" Name="Version_v1">
+			<Include StudyOID="TEMPLATE_ST_01" MetaDataVersionOID="mvd_tpl_1"/>
+			<Protocol>
+				<Alias Context="Context" Name = "Name"></Alias>
+				<StudyEventRef StudyEventOID="SE_VIZIT1" OrderNumber="1" Mandatory="Yes" />
+			</Protocol>
+			<StudyEventDef OID="SE_VIZIT1" Name="Vizit 1" Repeating="No" Type="Scheduled">
+				<FormRef FormOID="FORM_VD_1" Mandatory="Yes" />
+				<FormRef FormOID="FORM_DEAN_1" Mandatory="Yes" />
+			</StudyEventDef>
+			<FormDef OID="FORM_DEAN_1" Name="Demographic and antropometric" Repeating="No">
+				<ItemGroupRef ItemGroupOID="DE_IG_1" Mandatory="Yes" />
+				<ItemGroupRef ItemGroupOID="AN_IG_2" Mandatory="Yes" />
+			</FormDef>
+			<ItemGroupDef OID="DE_IG_1" Name="Demographic" Repeating="No" SASDatasetName="DE_IG_1">
+				<ItemRef ItemOID="DE_1" OrderNumber="1" Mandatory="Yes" />
+			</ItemGroupDef>
+			<ItemGroupDef OID="AN_IG_2" Name="Antropometric" Repeating="No" SASDatasetName="AN_IG_2">
+				<ItemRef ItemOID="AN_1" OrderNumber="1" Mandatory="Yes" />
+			</ItemGroupDef>
+			<ItemDef OID="DE_1" Name="Sex" DataType="text" Length="1" SASFieldName="DE_1" Comment="Comments"></ItemDef>
+			<ItemDef OID="AN_1" Name="Height" DataType="integer" Length="3" SASFieldName="AN_1" Comment="Comments"></ItemDef>
+		</MetaDataVersion>
+    </Study>
+    <Study OID="ST_2_1">
+		<GlobalVariables>
+			<StudyName>Study 2</StudyName>
+			<CurrentColor>Green</CurrentColor>
+			<StudyDescription>Study 2 Description</StudyDescription>
+			<ProtocolName>Protocol Number Study 2</ProtocolName>
+		</GlobalVariables>
+		<BasicDefinitions>
+            <MeasurementUnit OID="MU_01" Name="уд/мин">
                 <Symbol>
                     <TranslatedText>уд/мин</TranslatedText>
                 </Symbol>
             </MeasurementUnit>
-      </BasicDefinitions>    
-      <MetaDataVersion OID="v2" Name="Version_v2">
-        <Include StudyOID="DEFS" MetaDataVersionOID="v1"/>
-      <ItemGroupDef OID="IG_1" Name="Item group 1" Repeating="No" SASDatasetName="UNGRP">
-        <ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />
-        <ItemRef ItemOID="I_2" OrderNumber="2" Mandatory="Yes" />
-        <ItemRef ItemOID="I_3" OrderNumber="3" Mandatory="Yes" />
-      </ItemGroupDef>
-      <ItemDef OID="I_2" Name="Item 2" DataType="integer" Length="3" SASFieldName="IT2" Comment="Comments 2">
-        <CodeListRef CodeListOID="CL_1"/>
-      </ItemDef>
-      <ItemDef OID="I_3" Name="Item 3" DataType="integer" Length="3" SASFieldName="IT3" Comment="Comments 3">
-      </ItemDef>
-      <CodeList OID="CL_1" Name="NP" DataType="integer" SASFormatName="NP">
-        <CodeListItem CodedValue="0">
-          <Decode>
-            <TranslatedText>Выполнен</TranslatedText>
-          </Decode>
-        </CodeListItem>
-        <CodeListItem CodedValue="1">
-          <Decode>
-            <TranslatedText>Не применимо</TranslatedText>
-          </Decode>
-        </CodeListItem>
-      </CodeList>
-      </MetaDataVersion>
+		</BasicDefinitions>    
+		<MetaDataVersion OID="mdv_1" Name="Version_v1">
+			<Include StudyOID="ST_1_1" MetaDataVersionOID="mdv_1"/>
+			<ItemGroupDef OID="DE_IG_1" Name="Demographic" Repeating="No" SASDatasetName="DE_IG_1">
+				<ItemRef ItemOID="DE_1" OrderNumber="1" Mandatory="Yes" />
+				<ItemRef ItemOID="DE_2" OrderNumber="1" Mandatory="Yes" />
+				<ItemRef ItemOID="DE_3" OrderNumber="1" Mandatory="Yes" />
+			</ItemGroupDef>
+			<ItemDef OID="DE_1" Name="Sex" DataType="text" Length="1" SASFieldName="DE_1" Comment="Comments">
+				<CodeListRef CodeListOID="CL_2"/>
+			</ItemDef>
+			<ItemDef OID="DE_2" Name="Age" DataType="integer" Length="3" SASFieldName="DE_2" Comment="Age Comments"></ItemDef>
+			<ItemDef OID="DE_3" Name="Race" DataType="integer" Length="1" SASFieldName="DE_3" Comment="Race Comments">
+				<CodeListRef CodeListOID="CL_1"/>
+			</ItemDef>
+			<CodeList OID="CL_1" Name="Race codelist" DataType="integer" SASFormatName="CL_1">
+				<CodeListItem CodedValue="1">
+					<Decode>
+						<TranslatedText>Asian</TranslatedText>
+					</Decode>
+				</CodeListItem>
+				<CodeListItem CodedValue="2">
+					<Decode>
+						<TranslatedText>Caucasian</TranslatedText>
+					</Decode>
+				</CodeListItem>
+			</CodeList>
+			<CodeList OID="CL_2" Name="Sex codelist" DataType="text" SASFormatName="CL_2">
+				<CodeListItem CodedValue="M">
+					<Decode>
+						<TranslatedText>Male</TranslatedText>
+					</Decode>
+				</CodeListItem>
+				<CodeListItem CodedValue="F">
+					<Decode>
+						<TranslatedText>Female</TranslatedText>
+					</Decode>
+				</CodeListItem>
+			</CodeList>
+		</MetaDataVersion>
+		<MetaDataVersion OID="mdv_2" Name="Version_v2">
+			<Include StudyOID="ST_2_1" MetaDataVersionOID="mdv_1"/>
+			<ItemDef OID="DE_1" Name="Sex" DataType="integer" Length="1" SASFieldName="DE_1" Comment="Comments">
+				<CodeListRef CodeListOID="CL_2"/>
+			</ItemDef>
+			<CodeList OID="CL_2" Name="Sex codelist" DataType="integer" SASFormatName="CL_2">
+				<CodeListItem CodedValue="1">
+					<Decode>
+						<TranslatedText>Male</TranslatedText>
+					</Decode>
+				</CodeListItem>
+				<CodeListItem CodedValue="2">
+					<Decode>
+						<TranslatedText>Female</TranslatedText>
+					</Decode>
+				</CodeListItem>
+			</CodeList>
+		</MetaDataVersion>
     </Study>
-    <ClinicalData StudyOID="ST1" MetaDataVersionOID="v2">
+    <ClinicalData StudyOID="ST_1_1" MetaDataVersionOID="mdv_1">
       <SubjectData SubjectKey="001">
             <StudyEventData StudyEventOID="SE_VIZIT1">
-                <FormData FormOID="FORM_1">
-                    <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
-                        <ItemData ItemOID="I_1" Value="FieldValue"/>
-                        <ItemData ItemOID="I_2" Value="2"/>
-                        <ItemDataInteger ItemOID="I_3">4</ItemDataInteger>
+                <FormData FormOID="FORM_DEAN_1">
+                    <ItemGroupData ItemGroupOID="DE_IG_1">
+                        <ItemData ItemOID="DE_1" Value="F"/>
+                    </ItemGroupData>
+					<ItemGroupData ItemGroupOID="AN_IG_2">
+                        <ItemDataInteger ItemOID="AN_1">174</ItemDataInteger>
                     </ItemGroupData>
                 </FormData>
-            </StudyEventData>
-      </SubjectData>
-    </ClinicalData>
-    <ClinicalData StudyOID="DEFS" MetaDataVersionOID="v2">
-      <SubjectData SubjectKey="001">
-            <StudyEventData StudyEventOID="SE_VIZIT1">
-                <FormData FormOID="FORM_1">
-                    <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
-                        <ItemData ItemOID="I_1" Value="FieldValue"/>
-                        <ItemData ItemOID="I_2" Value="1"/>
-                        <ItemDataInteger ItemOID="I_3">1</ItemDataInteger>
+				<FormData FormOID="FORM_VD_1">
+					<ItemGroupData ItemGroupOID="VIT_IG_1">
+                        <ItemData ItemOID="I_1" Value="120"/>
+                        <ItemData ItemOID="I_2" Value="80"/>
+                        <ItemDataInteger ItemOID="I_3">63</ItemDataInteger>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>
       </SubjectData>
       <SubjectData SubjectKey="002">
             <StudyEventData StudyEventOID="SE_VIZIT1">
-                <FormData FormOID="FORM_1">
-                    <ItemGroupData ItemGroupOID="IG_1" TransactionType="Insert">
-                        <ItemData ItemOID="I_1" Value="FieldValue"/>
-                        <ItemData ItemOID="I_2" Value="3"/>
-                        <ItemDataInteger ItemOID="I_3">2</ItemDataInteger>
+                <FormData FormOID="FORM_DEAN_1">
+                    <ItemGroupData ItemGroupOID="DE_IG_1">
+                        <ItemData ItemOID="DE_1" Value="M"/>
+                    </ItemGroupData>
+					<ItemGroupData ItemGroupOID="AN_IG_2">
+                        <ItemDataInteger ItemOID="AN_1">181</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+				<FormData FormOID="FORM_VD_1">
+					<ItemGroupData ItemGroupOID="VIT_IG_1">
+                        <ItemData ItemOID="I_1" Value="121"/>
+                        <ItemData ItemOID="I_2" Value="79"/>
+                        <ItemDataInteger ItemOID="I_3">62</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+            </StudyEventData>
+      </SubjectData>
+    </ClinicalData>		
+    <ClinicalData StudyOID="ST_2_1" MetaDataVersionOID="mdv_1">
+      <SubjectData SubjectKey="001">
+            <StudyEventData StudyEventOID="SE_VIZIT1">
+                <FormData FormOID="FORM_DEAN_1">
+                    <ItemGroupData ItemGroupOID="DE_IG_1">
+                        <ItemData ItemOID="DE_1" Value="M"/>
+						<ItemData ItemOID="DE_2" Value="62"/>
+						<ItemDataInteger ItemOID="DE_3">1</ItemDataInteger>
+                    </ItemGroupData>
+					<ItemGroupData ItemGroupOID="AN_IG_2">
+                        <ItemDataInteger ItemOID="AN_1">175</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+				<FormData FormOID="FORM_VD_1">
+					<ItemGroupData ItemGroupOID="VIT_IG_1">
+                        <ItemData ItemOID="I_1" Value="121"/>
+                        <ItemData ItemOID="I_2" Value="86"/>
+                        <ItemDataInteger ItemOID="I_3">65</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+            </StudyEventData>
+      </SubjectData>
+      <SubjectData SubjectKey="002">
+            <StudyEventData StudyEventOID="SE_VIZIT1">
+                <FormData FormOID="FORM_DEAN_1">
+                    <ItemGroupData ItemGroupOID="DE_IG_1">
+                        <ItemData ItemOID="DE_1" Value="F"/>
+						<ItemData ItemOID="DE_2" Value="55"/>
+						<ItemDataInteger ItemOID="DE_3">2</ItemDataInteger>
+                    </ItemGroupData>
+					<ItemGroupData ItemGroupOID="AN_IG_2">
+                        <ItemDataInteger ItemOID="AN_1">173</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+				<FormData FormOID="FORM_VD_1">
+					<ItemGroupData ItemGroupOID="VIT_IG_1">
+                        <ItemData ItemOID="I_1" Value="120"/>
+                        <ItemData ItemOID="I_2" Value="88"/>
+                        <ItemDataInteger ItemOID="I_3">61</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+            </StudyEventData>
+      </SubjectData>
+    </ClinicalData>
+	<ClinicalData StudyOID="ST_2_1" MetaDataVersionOID="mdv_2">
+		<SubjectData SubjectKey="003">
+            <StudyEventData StudyEventOID="SE_VIZIT1">
+                <FormData FormOID="FORM_DEAN_1">
+                    <ItemGroupData ItemGroupOID="DE_IG_1">
+                        <ItemDataInteger ItemOID="DE_1">1</ItemDataInteger>
+						<ItemData ItemOID="DE_2" Value="49"/>
+						<ItemDataInteger ItemOID="DE_3">2</ItemDataInteger>
+                    </ItemGroupData>
+					<ItemGroupData ItemGroupOID="AN_IG_2">
+                        <ItemDataInteger ItemOID="AN_1">170</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+				<FormData FormOID="FORM_VD_1">
+					<ItemGroupData ItemGroupOID="VIT_IG_1">
+                        <ItemData ItemOID="I_1" Value="119"/>
+                        <ItemData ItemOID="I_2" Value="85"/>
+                        <ItemDataInteger ItemOID="I_3">63</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+            </StudyEventData>
+      </SubjectData>
+      <SubjectData SubjectKey="004">
+            <StudyEventData StudyEventOID="SE_VIZIT1">
+                <FormData FormOID="FORM_DEAN_1">
+                    <ItemGroupData ItemGroupOID="DE_IG_1">
+                        <ItemDataInteger ItemOID="DE_1">2</ItemDataInteger>
+						<ItemData ItemOID="DE_2" Value="52"/>
+						<ItemDataInteger ItemOID="DE_3">1</ItemDataInteger>
+                    </ItemGroupData>
+					<ItemGroupData ItemGroupOID="AN_IG_2">
+                        <ItemDataInteger ItemOID="AN_1">170</ItemDataInteger>
+                    </ItemGroupData>
+                </FormData>
+				<FormData FormOID="FORM_VD_1">
+					<ItemGroupData ItemGroupOID="VIT_IG_1">
+                        <ItemData ItemOID="I_1" Value="120"/>
+                        <ItemData ItemOID="I_2" Value="85"/>
+                        <ItemDataInteger ItemOID="I_3">60</ItemDataInteger>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>

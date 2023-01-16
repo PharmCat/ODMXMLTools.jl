@@ -17,6 +17,10 @@ struct  SPSSValueLabels
 end
 
 function Base.show(io::IO, spssc::SPSSValueLabels)
+    if length(spssc.v) == 0 
+        print(io, "") 
+        return 
+    end
     print(io, "VALUE LABELS")
     print(io, "\n", spssc.v[1][1])
     v = spssc.v[1][2]

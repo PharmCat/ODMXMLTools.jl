@@ -161,6 +161,7 @@ isStudyEventData(node::AbstractODMNode) = name(node) == :StudyEventData
 isFormData(node::AbstractODMNode) = name(node) == :FormData
 isItemGroupData(node::AbstractODMNode) = name(node) == :ItemGroupData
 isItemData(node::AbstractODMNode) = name(node) == :ItemData
+isItemDataType(node::AbstractODMNode) = name(node) in ITEMDATATYPE
 isSubjectData(node::AbstractODMNode) = name(node) == :SubjectData
 isMetaDataVersion(node::AbstractODMNode) = name(node) == :MetaDataVersion
 isStudy(node::AbstractODMNode) = name(node) == :Study
@@ -204,6 +205,21 @@ function content(n::AbstractODMNode)
     nothing
 end
 
+function getitemdatavalue(n::AbstractODMNode, null)
+    if attribute(n, :IsNull) == "Yes" return null end
+    if isItemData(n)
+        return attribute(n, :Value) 
+    elseif isItemDataType(n) 
+        val = content(n) 
+        if isnothing(val)
+            @warn "ItemData[TYPE] content is empty"
+            return ""
+        else
+            return val
+        end
+    end
+    nothing
+end
 
 t_collect(a::Tuple) = [i for i in a];
 t_collect(a::Vector) = a;
@@ -501,15 +517,8 @@ function formlist(el::Vector{T}; attrs = nothing,  categ = false) where T <: Abs
         attrs = (:OID, :Name, :Repeating)
     end
     df = df_list(el, :FormDef, attrs)
-    #=
-    df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), t_collect(attrs))
-    for i in el
-        if name(i) == :FormDef
-            push!(df, attributes(i, attrs))
-        end
-    end
-    =#
-    if categ
+
+    if categ && :OID in attrs
         transform!(df, :OID => categorical, renamecols=false)
     end
     df
@@ -552,7 +561,7 @@ function itemgrouplist(el::Vector{T}; optional = false, attrs = nothing, categ =
         end
     end
     =#
-    if categ
+    if categ && :OID in attrs
         transform!(df, :OID => categorical, renamecols=false)
     end
     df
@@ -599,7 +608,7 @@ function itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = fals
             push!(df, attributes(i, attrs))
         end
     end
-    if categ
+    if categ && :OID in attrs
         transform!(df, :OID => categorical, renamecols=false)
     end
     df
@@ -700,6 +709,7 @@ Build MetaData from MetaDataVersion.
 """
 function buildmetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     mdat   = findstudymetadata(odm, soid, moid)
+    if isnothing(mdat) error("MetaDataVersion not found (StudyOID: $(soid), MetaDataVersionOID: $(moid))") end
     stmd   = StudyMetaData(mdat, AbstractODMNode[])
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
@@ -824,14 +834,16 @@ function clinicaldatatable(cd::AbstractODMNode;
         categ = false, 
         addstudyid = false,
         addstudyidcol = false,
-        idlnames = nothing)
+        idlnames = nothing,
+        null = "NULL",
+        drop = [:StudyEventRepeatKey, :FormRepeatKey])
     
         
     if name(cd) != :ClinicalData error("This is not ClinicalData") end
     # For TypedData
     datatype = String
     #df = DataFrame(SubjectKey = String[], StudyEventOID = CategoricalArray(String[]), FormOID = CategoricalArray(String[]), ItemGroupOID = CategoricalArray(String[]), ItemGroupRepeatKey = CategoricalArray(String[]), ItemOID = CategoricalArray(String[]), Value = String[])
-    df = DataFrame(SubjectKey = String[], StudyEventOID = String[], FormOID = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = datatype[])
+    df = DataFrame(SubjectKey = String[], StudyEventOID = String[], StudyEventRepeatKey = String[], FormOID = String[], FormRepeatKey = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = datatype[])
     sdl = findelements(cd, :SubjectData)
     edl = AbstractODMNode[]
     fdl = AbstractODMNode[]
@@ -875,28 +887,15 @@ function clinicaldatatable(cd::AbstractODMNode;
                         if !isnothing(item)
                             if !(attribute(i, :ItemOID) in item) continue end
                         end
-                        if isItemData(i)
-                            push!(df, (subjid,
-                            attribute(e, :StudyEventOID),
-                            attribute(f, :FormOID),
-                            attribute(g, :ItemGroupOID),
-                            attribute(g, :ItemGroupRepeatKey),
-                            attribute(i, :ItemOID),
-                            attribute(i, :Value)))
-                        else
-                            val = content(i)
-                            if isnothing(val)
-                                @warn "ItemData[TYPE] content is empty"
-                                val = ""
-                            end
-                            push!(df, (subjid,
-                            attribute(e, :StudyEventOID),
-                            attribute(f, :FormOID),
-                            attribute(g, :ItemGroupOID),
-                            attribute(g, :ItemGroupRepeatKey),
-                            attribute(i, :ItemOID),
-                            val))       
-                        end
+                        push!(df, (subjid,
+                        attribute(e, :StudyEventOID),
+                        attribute(e, :StudyEventRepeatKey),
+                        attribute(f, :FormOID),
+                        attribute(f, :FormRepeatKey),
+                        attribute(g, :ItemGroupOID),
+                        attribute(g, :ItemGroupRepeatKey),
+                        attribute(i, :ItemOID),
+                        getitemdatavalue(i, null)))
                     end
                 end
             end
@@ -911,6 +910,9 @@ function clinicaldatatable(cd::AbstractODMNode;
     end
     if addstudyidcol
         insertcols!(df, 1, :StudyOID=>fill(attribute(cd, :StudyOID), size(df, 1)); copycols=false)
+    end
+    if length(drop) > 0
+        select!(df, Not(drop))
     end
     df
 end
@@ -968,7 +970,7 @@ function clinicaldatatable(odm::ODMRoot, range::UnitRange{Int64}; kwargs...)
 
     df = clinicaldatatable(cld[first(range)]; kwargs...)
     if length(range) > 1
-        for i = range[2]:last(range)
+        for i = 2:length(range)
             append!(df, clinicaldatatable(cld[range[i]]; kwargs...))
         end
     end
