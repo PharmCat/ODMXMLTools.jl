@@ -132,7 +132,7 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
     for k in keys(node.attr)
         k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
     end
-    if !existchildtextnode(node) push!(log, "$(name(node)): No text node in body") end
+    if node.content == "" push!(log, "$(name(node)): No content is empty.") end
     for i in children(node)
         if !isa(i, ODMTextNode) push!(log, "$(name(node)): Unexpected node ($(name(i))) in body") end
     end
@@ -491,10 +491,8 @@ end
 function nodenameslist(node)
     set = Set{Symbol}()
     ch = children(node)
-    for i in ch
-        if havename(i)
-            push!(set, name(i))
-        end
+    for i in ch 
+        push!(set, name(i))
     end
     set
 end
@@ -512,10 +510,10 @@ function validateodm_!(log::AbstractVector, root::ODMRoot, node::AbstractODMNode
         validateodm_!(log, root, i)
     end
 end
-
+#=
 function validateodm_!(log::AbstractVector, root::ODMRoot, node::ODMTextNode)
 end
-
+=#
 function validateodm(odm::ODMRoot)
     log = String[]
     validateodm_!(log, odm, odm)
@@ -533,7 +531,8 @@ function checkdatavalues(odm::ODMRoot)
     log = []
     for cldv in cld
         mdv = buildmetadata(odm, attribute(cldv, :StudyOID), attribute(cldv, :MetaDataVersionOID))
-        idd = itemdefdict(mdv)
+        idd = defdict(mdv, :ItemDef)
+        cldd = defdict(mdv, :CodeList)
         for s in cldv.el
             if isSubjectData(s)
                 for e in s.el
@@ -618,6 +617,19 @@ function checkdatavalues(odm::ODMRoot)
                                                 if isnothing(pval)
                                                     pushlog!(log, :WARN, s, e, f, g, i, "DataType is $(itype), but value `$val` can't be parsed.")
                                                 end
+                                                clr = findelement(idef, :CodeListRef)
+                                                if !isnothing(clr)
+                                                    cld = cldd[attribute(clr, :CodeListOID)]
+                                                    if attribute(cld, :DataType) != itype
+                                                        pushlog!(log, :ERROR, s, e, f, g, i, "ItemDef DataType ($(itype)) not equal CodeList's DataType ($(attribute(cld, :DataType))).")
+                                                    end
+                                                    cvs = codedvalueset(cld)
+                                                    if length(cvs) > 0
+                                                        if val ∉ cvs
+                                                            pushlog!(log, :WARN, s, e, f, g, i, "Value ($(val)) not in CodeListItem's CodedValue set.")
+                                                        end
+                                                    end
+                                                end
                                             end
                                         end
                                     end
@@ -633,15 +645,26 @@ function checkdatavalues(odm::ODMRoot)
 end
 
 
-function itemdefdict(mdv)
+function defdict(mdv, nname)
     d = Dict{String, ODMNode}()
     for i in mdv.el
-        if name(i) == :ItemDef
+        if name(i) == nname
             d[attribute(i, :OID)] = i
         end
     end
     d
 end
+
+function codedvalueset(n)
+    s = Set{String}()
+    for i in n.el
+        if name(n) == :CodeListItem
+            push!(s, attribute(i, :CodedValue))
+        end
+    end
+    s
+end
+
 
 function pushlog!(log, t, s, e, f, g, i, msg)
     push!(log, (t, 
