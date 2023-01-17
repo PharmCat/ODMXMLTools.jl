@@ -389,19 +389,6 @@ function clinicaldatalist(odm::ODMRoot)
     df
 end
 
-#=
-"""
-    findclinicaldata(odm::ODMRoot, soid::AbstractString)
-
-Return ClinicalData element by study OID (`soid`), nothing if not found.
-"""
-function findclinicaldata(odm::ODMRoot, soid::AbstractString)
-    for i in odm.el
-        if isClinicalData(i) && attribute(i, "StudyOID") == soid return i end
-    end
-    nothing
-end
-=#
 """
     findclinicaldata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
 

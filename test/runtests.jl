@@ -26,6 +26,11 @@ using Test
     "ST_1_1"
     "ST_2_1"]
 
+    cdl = ODMXMLTools.clinicaldatalist(odm)
+    @test cdl[:, 1] == ["ST_1_1"
+    "ST_2_1"
+    "ST_2_1"]
+
     # Build metadata for template
     mdb = ODMXMLTools.buildmetadata(odm, "TEMPLATE_ST_01", "mvd_tpl_1")
     @test_nowarn show(io, mdb)
@@ -72,6 +77,12 @@ using Test
     st1 =  ODMXMLTools.findstudy(odm, "ST_1_1")
     @test_nowarn show(io, st1)
 
+    el = ODMXMLTools.findelement(st1, :GlobalVariables)
+    @test_nowarn show(io, el)
+    el = ODMXMLTools.findelement(el, :StudyName)
+    @test_nowarn show(io, el)
+    @test ODMXMLTools.content(el) == "Study 1"
+
     mdv = ODMXMLTools.findelement(st1, :MetaDataVersion, "mdv_1")
     @test mdv == ODMXMLTools.findstudymetadata(odm, "ST_1_1", "mdv_1")
 
@@ -96,7 +107,17 @@ using Test
     cdat = ODMXMLTools.findclinicaldata(odm, "ST_1_1", "mdv_1")
     @test cdat == ODMXMLTools.findclinicaldata(odm, "ST_1_1")[1]
   
-    @test_nowarn ODMXMLTools.clinicaldatatable(cdat)
+    cdt = ODMXMLTools.clinicaldatatable(cdat, addstudyidcol = true)
+    @test cdt[:, :Value] == ["F"
+    "174"
+    "120"
+    "80"
+    "63"
+    "M"
+    "181"
+    "121"
+    "79"
+    "62"]
     @test_nowarn ODMXMLTools.clinicaldatatable(odm, "ST_1_1")
     @test_nowarn ODMXMLTools.clinicaldatatable(odm, [1])
     @test_nowarn ODMXMLTools.clinicaldatatable(odm, 2:3)
@@ -141,4 +162,6 @@ using Test
     @test ODMXMLTools.isroot(c[1]) == false
 
     #@test ODMXMLTools.ischild(c[1], odm)
+
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:Study])
 end

@@ -127,8 +127,23 @@
 					</Decode>
 				</CodeListItem>
 			</CodeList>
+      <MethodDef OID="ME_1" Name="Method 1" Type="Computation">
+          <Description>
+              <TranslatedText>Text value</TranslatedText>
+          </Description>
+      </MethodDef>
+      <ConditionDef OID="CD_1" Name="ConditionDef 1">
+          <Description>
+              <TranslatedText>Text value</TranslatedText>
+          </Description>
+          <FormalExpression Context="Julia">1 + 1</FormalExpression>
+      </ConditionDef>
 		</MetaDataVersion>
     </Study>
+    <AdminData StudyOID = "ST_1_1">
+    </AdminData>
+    <ReferenceData StudyOID="ST_1_1" MetaDataVersionOID="mdv_1">
+    </ReferenceData>
     <ClinicalData StudyOID="ST_1_1" MetaDataVersionOID="mdv_1">
       <SubjectData SubjectKey="001">
             <StudyEventData StudyEventOID="SE_VIZIT1">
