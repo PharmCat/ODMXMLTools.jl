@@ -43,16 +43,16 @@ end
 
 
 """
-spss_form_variable_labels(mdb, form; variable = :OID, labels = :Comment)
+spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name)
 
 SPSS command to set variable labels.
 
 `variable` - varable names attribute, `OID` by default.
 
-`labels` - labels names attribute, `Comment` by default.
+`labels` - labels names attribute, `Name` by default.
 
 """
-function spss_form_variable_labels(mdb, form; variable = :OID, labels = :Comment)
+function spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name)
     df = itemformcontent_(mdb, form; optional = true)
     v  = Vector{Pair}(undef, length(df))
     for i = 1:size(df, 1)
