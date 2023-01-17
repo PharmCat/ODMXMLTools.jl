@@ -140,6 +140,9 @@ using Test
     spssevlab = ODMXMLTools.spss_events_value_labels(mdb; variable = "StudyEventOID", value = :OID, label = :Name)
     @test_nowarn show(io, spssevlab)
 
+
+    @test_nowarn ODMXMLTools.oclformdetailslist(mdb)
+
     # DELETE ClinicalData
     cdel = ODMXMLTools.findelements(odm, :ClinicalData)
     @test_nowarn show(io, cdel)
