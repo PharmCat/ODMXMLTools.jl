@@ -1,6 +1,10 @@
 
+"""
+    oclformdetailslist(md::AbstractODMNode)
 
-function oclformdetailslist(md)
+Openclinica form information (`md` - MetaDataVersion element).
+"""
+function oclformdetailslist(md::AbstractODMNode)
     fl = findelements(md, :FormDef)
     df = DataFrame(OID = String[], Name = String[], Repeating = String[],
     ParentFormOID = String[], SectionLabel = String[], SectionTitle = String[], SectionSubtitle = String[], SectionInstructions = String[], SectionPageNumber = String[])

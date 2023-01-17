@@ -132,3 +132,8 @@ ODMXMLTools.spss_form_variable_labels
 ```@docs
 ODMXMLTools.spss_form_value_labels
 ```
+
+### ODMXMLTools.spss_events_value_labels
+```@docs
+ODMXMLTools.spss_events_value_labels
+```
