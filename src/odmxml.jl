@@ -156,16 +156,16 @@ function havename(node::AbstractODMNode)
     !isa(node, ODMTextNode)
 end
 
+isMetaDataVersion(node::AbstractODMNode) = name(node) == :MetaDataVersion
+isStudy(node::AbstractODMNode) = name(node) == :Study
 
+isClinicalData(node::AbstractODMNode) = name(node) == :ClinicalData
+isSubjectData(node::AbstractODMNode) = name(node) == :SubjectData
 isStudyEventData(node::AbstractODMNode) = name(node) == :StudyEventData
 isFormData(node::AbstractODMNode) = name(node) == :FormData
 isItemGroupData(node::AbstractODMNode) = name(node) == :ItemGroupData
 isItemData(node::AbstractODMNode) = name(node) == :ItemData
 isItemDataType(node::AbstractODMNode) = name(node) in ITEMDATATYPE
-isSubjectData(node::AbstractODMNode) = name(node) == :SubjectData
-isMetaDataVersion(node::AbstractODMNode) = name(node) == :MetaDataVersion
-isStudy(node::AbstractODMNode) = name(node) == :Study
-isClinicalData(node::AbstractODMNode) = name(node) == :ClinicalData
 
 
 function have_attr(n::AbstractODMNode, attr::Symbol)
@@ -689,6 +689,8 @@ function buildmetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
+
+
 """
     buildmetadata(odm::ODMRoot, moid::AbstractString)
 

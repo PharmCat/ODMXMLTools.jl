@@ -100,8 +100,6 @@ using Test
     igd =  ODMXMLTools.findelement(mdb, :ItemGroupDef, "AN_IG_2")
     @test ODMXMLTools.name(igd) == :ItemGroupDef
 
-    @test_nowarn ODMXMLTools.validateodm(odm)
-
     @test_nowarn ODMXMLTools.clinicaldatatable(odm, addstudyid= true, addstudyidcol = true)
 
     cdat = ODMXMLTools.findclinicaldata(odm, "ST_1_1", "mdv_1")
@@ -128,6 +126,12 @@ using Test
     @test_nowarn ODMXMLTools.studyinfo(odm; io = io)
     @test_nowarn ODMXMLTools.studyinfo(odm, "ST_1_1";  io = io)
 
+
+    # CHECK
+    @test_nowarn ODMXMLTools.validateodm(odm)
+
+    cdv = ODMXMLTools.checkdatavalues(odm)
+    @test length(cdv) == 0
     #
     spssvallab =  ODMXMLTools.spss_form_value_labels(mdb, "FORM_VD_1"; variable = :OID)
     @test_nowarn show(io, spssvallab)
