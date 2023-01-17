@@ -140,7 +140,15 @@ using Test
     spssevlab = ODMXMLTools.spss_events_value_labels(mdb; variable = "StudyEventOID", value = :OID, label = :Name)
     @test_nowarn show(io, spssevlab)
 
+    # Add user defuned labels
+    vlabs = [
+    "SubjectKey" => "Скрининговый номер",
+    "StudyEventOID" => "Визит",
+    "ItemGroupRepeatKey" => "Номер процедуры"]
+    spssvarlab = ODMXMLTools.spss_form_variable_labels(mdb, "FORM_DEAN_1", vlabs)
+    @test_nowarn show(io, spssvarlab)
 
+    # Test Openclinica form list (experimental)
     @test_nowarn ODMXMLTools.oclformdetailslist(mdb)
 
     # DELETE ClinicalData
