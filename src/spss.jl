@@ -13,10 +13,14 @@ function Base.show(io::IO, spssc::SPSSVariableLabels)
 end
 
 struct  SPSSValueLabels
-    v::Vector
+    v::Vector{Pair{String, Vector{Pair}}}
 end
 
 function Base.show(io::IO, spssc::SPSSValueLabels)
+    if length(spssc.v) == 0 
+        print(io, "") 
+        return 
+    end
     print(io, "VALUE LABELS")
     print(io, "\n", spssc.v[1][1])
     v = spssc.v[1][2]
@@ -78,7 +82,7 @@ SPSS command to set value labels.
 """
 function spss_form_value_labels(mdb, form; variable = :OID)
     items = itemformcontent_(mdb, form)
-    v  = Vector{Pair}(undef, 0)
+    v  = Vector{Pair{String, Vector{Pair}}}(undef, 0)
     for i = 1:length(items)
         cid = findelement(items[i], :CodeListRef)
         if !isnothing(cid)
@@ -113,6 +117,15 @@ function spss_form_value_labels(mdb, form; variable = :OID)
         end
     end
     SPSSValueLabels(v)
+end
+
+function spss_events_value_labels(mdb; variable = "StudyEventOID", value::Symbol = :OID, label::Symbol = :Name)
+    events = findelements(mdb, :StudyEventDef)
+    p   = Vector{Pair}(undef, 0) 
+    for i in events
+        push!(p, attribute(i, value) => attribute(i, label))
+    end
+    SPSSValueLabels([variable => p])
 end
 #=
 struct SPSSExport

@@ -411,8 +411,10 @@ end
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemData}; integrity = false)
 end
 
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemData}; integrity = false)
+#=
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataTyped}; integrity = false)
 end
+=#
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ArchiveLayoutRef}; integrity = false)
 end

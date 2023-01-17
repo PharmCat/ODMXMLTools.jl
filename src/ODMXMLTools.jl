@@ -292,6 +292,7 @@ module ODMXMLTools
     include("odmxml.jl")
     include("checknode.jl")
     include("spss.jl")
+	include("nodeinfo.jl")
     include("ocl.jl")
 
 end # module
