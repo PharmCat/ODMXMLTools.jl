@@ -284,7 +284,7 @@ end
 
 function findelements_(n, nnames::Vector{Symbol})
     inds = AbstractODMNode[]
-    for i in n.el
+    for i in n
         if name(i) in nnames
             push!(inds, i)
         end
@@ -297,13 +297,7 @@ end
 Find all elements by name.
 """
 function findelements(n::AbstractODMNode, nname::Symbol)
-    inds = AbstractODMNode[]
-    for i in n.el
-        if name(i) == nname
-            push!(inds, i)
-        end
-    end
-    inds
+    findelements_(n.el, nname)
 end
 
 """
@@ -312,13 +306,7 @@ end
 Find all elements by name in list.
 """
 function findelements(n::AbstractODMNode, nnames::Vector{Symbol})
-    inds = AbstractODMNode[]
-    for i in n.el
-        if name(i) in nnames
-            push!(inds, i)
-        end
-    end
-    inds
+    findelements_(n.el, nname)
 end
 
 Base.findall(n::AbstractODMNode, args...) = findelements(n, args...)
