@@ -1,17 +1,23 @@
+## Body
+
+	(SubjectData*, AuditRecords*, Signatures*, Annotations*)
+
 ## Attributes
 
-ClinicalData node should get attributes:
+*	StudyOID 	oidref 		References the Study that uses the data nested within this element.
+*	MetaDataVersionOID 	oidref 		References the MetaDataVersion (within the above Study) that governs the data nested within this element.
 
-* StudyOID
-* MetaDataVersionOID
+## Contained in
 
-## Body
-	
-* SubjectData*
-* AuditRecords*
-* Signatures*
-* Annotations*
+*	ODM
 
-## In
+Clinical data for multiple subjects.
 
-ODM
+The StudyOID and MetaDataVersionOID attributes select a particular metadata version. All metadata references (OIDs) occurring within this ClinicalData element refer to definitions within the selected metadata version.
+
+Based on 
+Specification for the Operational Data Model (ODM)
+Version 1.3.2 Production
+Source File: ODM1-3-2.htm
+Last Update: 2013-12-01  Copyright © CDISC 2013.
+http://www.cdisc.org/odm

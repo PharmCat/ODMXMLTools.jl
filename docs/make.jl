@@ -11,9 +11,12 @@ makedocs(
             "Examples" => "examples.md",
             "ODM" => [
                 "ODM" => ".//odm//odm.md",
-                "Form" => ".//odm//form.md",
-                "ItemGroup" => ".//odm//itemgroup.md",
-                "Item" => ".//odm//item.md",
+                "Study" => ".//odm//study.md",
+                "MetaDataVersion" => ".//odm//metadata.md",
+                "StudyEventDef" => ".//odm//event.md",
+                "FormDef" => ".//odm//form.md",
+                "ItemGroupDef" => ".//odm//itemgroup.md",
+                "ItemDef" => ".//odm//item.md",
                 "ClinicalData"=>".//odm//clinicaldata.md"],
             "API" => "api.md"
             ],
