@@ -1,19 +1,46 @@
-
+## Import
 
 ### ODMXMLTools.importxml
 ```@docs
 ODMXMLTools.importxml
 ```
 
+## Build metadata
+
+### ODMXMLTools.buildmetadata
+```@docs
+ODMXMLTools.buildmetadata
+```
+
+## Clinical data table 
+
+### ODMXMLTools.clinicaldatatable
+```@docs
+ODMXMLTools.clinicaldatatable
+```
+
+## Other tables
+
+### ODMXMLTools.subjectdatatable
+```@docs
+ODMXMLTools.subjectdatatable
+```
+
+### ODMXMLTools.codelisttable
+```@docs
+ODMXMLTools.codelisttable
+```
+
+### ODMXMLTools.itemcodelisttable
+```@docs
+ODMXMLTools.itemcodelisttable
+```
+
+## Listing
 
 ### ODMXMLTools.metadatalist
 ```@docs
 ODMXMLTools.metadatalist
-```
-
-### ODMXMLTools.studylist
-```@docs
-ODMXMLTools.studylist
 ```
 
 ### ODMXMLTools.clinicaldatalist
@@ -21,19 +48,9 @@ ODMXMLTools.studylist
 ODMXMLTools.clinicaldatalist
 ```
 
-### ODMXMLTools.findclinicaldata
+### ODMXMLTools.studylist
 ```@docs
-ODMXMLTools.findclinicaldata
-```
-
-### ODMXMLTools.findstudy
-```@docs
-ODMXMLTools.findstudy
-```
-
-### ODMXMLTools.findstudymetadata
-```@docs
-ODMXMLTools.findstudymetadata
+ODMXMLTools.studylist
 ```
 
 ### ODMXMLTools.eventlist
@@ -56,6 +73,35 @@ ODMXMLTools.itemgrouplist
 ODMXMLTools.itemlist
 ```
 
+## Find node
+
+### ODMXMLTools.findelement
+```@docs
+ODMXMLTools.findelement
+```
+
+### ODMXMLTools.findelements
+```@docs
+ODMXMLTools.findelements
+```
+
+### ODMXMLTools.findstudy
+```@docs
+ODMXMLTools.findstudy
+```
+
+### ODMXMLTools.findstudymetadata
+```@docs
+ODMXMLTools.findstudymetadata
+```
+
+### ODMXMLTools.findclinicaldata
+```@docs
+ODMXMLTools.findclinicaldata
+```
+
+## Content 
+
 ### ODMXMLTools.formcontent
 ```@docs
 ODMXMLTools.formcontent
@@ -71,45 +117,7 @@ ODMXMLTools.itemgroupcontent
 ODMXMLTools.itemformcontent
 ```
 
-### ODMXMLTools.buildmetadata
-```@docs
-ODMXMLTools.buildmetadata
-```
-
-### ODMXMLTools.codelisttable
-```@docs
-ODMXMLTools.codelisttable
-```
-
-### ODMXMLTools.itemcodelisttable
-```@docs
-ODMXMLTools.itemcodelisttable
-```
-
-### ODMXMLTools.clinicaldatatable
-```@docs
-ODMXMLTools.clinicaldatatable
-```
-
-### ODMXMLTools.subjectdatatable
-```@docs
-ODMXMLTools.subjectdatatable
-```
-
-### ODMXMLTools.studyinfo
-```@docs
-ODMXMLTools.studyinfo
-```
-
-### ODMXMLTools.findelement
-```@docs
-ODMXMLTools.findelement
-```
-
-### ODMXMLTools.findelements
-```@docs
-ODMXMLTools.findelements
-```
+## Delete 
 
 ### ODMXMLTools.deletestudy!
 ```@docs
@@ -119,6 +127,20 @@ ODMXMLTools.deletestudy!
 ### ODMXMLTools.deleteclinicaldata!
 ```@docs
 ODMXMLTools.deleteclinicaldata!
+```
+
+## Information 
+
+### ODMXMLTools.studyinfo
+```@docs
+ODMXMLTools.studyinfo
+```
+
+## Validation
+
+### ODMXMLTools.checkdatavalues
+```@docs
+ODMXMLTools.checkdatavalues
 ```
 
 ## SPSS

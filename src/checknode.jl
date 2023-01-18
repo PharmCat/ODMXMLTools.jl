@@ -510,10 +510,16 @@ function validateodm_!(log::AbstractVector, root::ODMRoot, node::AbstractODMNode
         validateodm_!(log, root, i)
     end
 end
-#=
-function validateodm_!(log::AbstractVector, root::ODMRoot, node::ODMTextNode)
-end
-=#
+
+"""
+    validateodm(odm::ODMRoot)
+
+Basic structure validation.
+
+!!! warning
+    Not full implemented.
+
+"""
 function validateodm(odm::ODMRoot)
     log = String[]
     validateodm_!(log, odm, odm)
@@ -524,7 +530,10 @@ end
 """
     checkdatavalues(odm::ODMRoot)
 
-Check all data values.
+Check all data values in all ClinicalData sections.
+
+!!! warning
+    Not full implemented.
 """
 function checkdatavalues(odm::ODMRoot)
     cld  = findclinicaldata(odm)
