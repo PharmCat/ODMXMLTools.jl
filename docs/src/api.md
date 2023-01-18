@@ -138,6 +138,11 @@ ODMXMLTools.studyinfo
 
 ## Validation
 
+### ODMXMLTools.validateodm
+```@docs
+ODMXMLTools.validateodm
+```
+
 ### ODMXMLTools.checkdatavalues
 ```@docs
 ODMXMLTools.checkdatavalues

@@ -14,14 +14,20 @@ module ODMXMLTools
     findelement,
     findallelements,
     buildmetadata,
+	clinicaldatalist,
     eventlist,
     formlist,
     itemgrouplist,
     itemlist,
+	formcontent,
+	itemformcontent,
     itemgroupcontent,
+	clinicaldatatable,
+	codelisttable,
+	itemcodelisttable,
+	subjectdatatable,
     validateodm,
-    clinicaldatatable,
-    clinicaldatalist,
+	checkdatavalues,
 	children
 
     StrOrSym = Union{String, Symbol}
