@@ -3,12 +3,12 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   FileOID="FILEID"
   Description="FULL"
+  CreationDateTime="2020-10-26T15:08:00+00:00"
   FileType="Snapshot"
   ODMVersion="1.3">
 	<Study OID="TEMPLATE_ST_01">
 		<GlobalVariables>
 			<StudyName>Template 1</StudyName>
-			<CurrentColor>Black</CurrentColor>
 			<StudyDescription>This is basic form template</StudyDescription>
 			<ProtocolName>Template</ProtocolName>
 		</GlobalVariables>
@@ -29,38 +29,56 @@
     <Study OID="ST_1_1">
 		<GlobalVariables>
 			<StudyName>Study 1</StudyName>
-			<CurrentColor>Blue</CurrentColor>
 			<StudyDescription>Study 1 Description</StudyDescription>
 			<ProtocolName>Protocol Number</ProtocolName>
 		</GlobalVariables>
 		<MetaDataVersion OID="mdv_1" Name="Version_v1">
 			<Include StudyOID="TEMPLATE_ST_01" MetaDataVersionOID="mvd_tpl_1"/>
 			<Protocol>
-				<Alias Context="Context" Name = "Name"></Alias>
-				<StudyEventRef StudyEventOID="SE_VIZIT1" OrderNumber="1" Mandatory="Yes" />
+				<StudyEventRef StudyEventOID="SE_VIZIT1" OrderNumber="1" Mandatory="Yes"/>
+				<Alias Context="Context" Name = "Name"/>
 			</Protocol>
 			<StudyEventDef OID="SE_VIZIT1" Name="Vizit 1" Repeating="No" Type="Scheduled">
-				<FormRef FormOID="FORM_VD_1" Mandatory="Yes" />
-				<FormRef FormOID="FORM_DEAN_1" Mandatory="Yes" />
+				<Description>
+              		<TranslatedText>Event 1 description</TranslatedText>
+          		</Description>
+				<FormRef FormOID="FORM_VD_1" Mandatory="Yes"/>
+				<FormRef FormOID="FORM_DEAN_1" Mandatory="Yes"/>
+				<ArchiveLayout OID = "AL_01" PdfFileName = "filename.pdf" PresentationOID = "PR_01"/>
+				<Alias Context = "context" Name = "name"></Alias>
 			</StudyEventDef>
 			<FormDef OID="FORM_DEAN_1" Name="Demographic and antropometric" Repeating="No">
+				<Description>
+              		<TranslatedText>Form 1 description</TranslatedText>
+          		</Description>
 				<ItemGroupRef ItemGroupOID="DE_IG_1" Mandatory="Yes" />
 				<ItemGroupRef ItemGroupOID="AN_IG_2" Mandatory="Yes" />
 			</FormDef>
 			<ItemGroupDef OID="DE_IG_1" Name="Demographic" Repeating="No" SASDatasetName="DE_IG_1">
+				<Description>
+              		<TranslatedText>Demographic item group 1 description </TranslatedText>
+          		</Description>
 				<ItemRef ItemOID="DE_1" OrderNumber="1" Mandatory="Yes" />
+				<Alias Context = "context" Name = "name"></Alias>
 			</ItemGroupDef>
 			<ItemGroupDef OID="AN_IG_2" Name="Antropometric" Repeating="No" SASDatasetName="AN_IG_2">
 				<ItemRef ItemOID="AN_1" OrderNumber="1" Mandatory="Yes" />
 			</ItemGroupDef>
-			<ItemDef OID="DE_1" Name="Sex" DataType="text" Length="1" SASFieldName="DE_1" Comment="Comments"></ItemDef>
+			<ItemDef OID="DE_1" Name="Sex" DataType="string" Length="1" SASFieldName="DE_1" Comment="Comments">
+				<Description>
+              		<TranslatedText>ItemDef 1 description </TranslatedText>
+          		</Description>
+				<Question>
+					<TranslatedText>ItemDef 1 question </TranslatedText>
+				</Question>
+				<ExternalQuestion/>
+			</ItemDef>
 			<ItemDef OID="AN_1" Name="Height" DataType="integer" Length="3" SASFieldName="AN_1" Comment="Comments"></ItemDef>
 		</MetaDataVersion>
     </Study>
     <Study OID="ST_2_1">
 		<GlobalVariables>
 			<StudyName>Study 2</StudyName>
-			<CurrentColor>Green</CurrentColor>
 			<StudyDescription>Study 2 Description</StudyDescription>
 			<ProtocolName>Protocol Number Study 2</ProtocolName>
 		</GlobalVariables>
@@ -69,6 +87,7 @@
                 <Symbol>
                     <TranslatedText>уд/мин</TranslatedText>
                 </Symbol>
+				<Alias Context = "context" Name = "name"></Alias>
             </MeasurementUnit>
 		</BasicDefinitions>    
 		<MetaDataVersion OID="mdv_1" Name="Version_v1">
@@ -78,10 +97,20 @@
 				<ItemRef ItemOID="DE_2" OrderNumber="1" Mandatory="Yes" />
 				<ItemRef ItemOID="DE_3" OrderNumber="1" Mandatory="Yes" />
 			</ItemGroupDef>
-			<ItemDef OID="DE_1" Name="Sex" DataType="text" Length="1" SASFieldName="DE_1" Comment="Comments">
+			<ItemDef OID="I_3" Name="HR" DataType="integer" Length="3" SASFieldName="HR" Comment="Heart rate">
+				<MeasurementUnitRef MeasurementUnitOID="MU_01"></MeasurementUnitRef>
+			</ItemDef>
+			<ItemDef OID="DE_1" Name="Sex" DataType="string" Length="1" SASFieldName="DE_1" Comment="Comments">
 				<CodeListRef CodeListOID="CL_2"/>
 			</ItemDef>
-			<ItemDef OID="DE_2" Name="Age" DataType="integer" Length="3" SASFieldName="DE_2" Comment="Age Comments"></ItemDef>
+			<ItemDef OID="DE_2" Name="Age" DataType="integer" Length="3" SASFieldName="DE_2" Comment="Age Comments">
+				<RangeCheck Comparator = "GT" SoftHard = "Soft">
+					<CheckValue>10</CheckValue>
+					<ErrorMessage>
+						<TranslatedText>Error value</TranslatedText>
+					</ErrorMessage>
+				</RangeCheck>
+			</ItemDef>
 			<ItemDef OID="DE_3" Name="Race" DataType="integer" Length="1" SASFieldName="DE_3" Comment="Race Comments">
 				<CodeListRef CodeListOID="CL_1"/>
 			</ItemDef>
@@ -97,7 +126,7 @@
 					</Decode>
 				</CodeListItem>
 			</CodeList>
-			<CodeList OID="CL_2" Name="Sex codelist" DataType="text" SASFormatName="CL_2">
+			<CodeList OID="CL_2" Name="Sex codelist" DataType="string" SASFormatName="CL_2">
 				<CodeListItem CodedValue="M">
 					<Decode>
 						<TranslatedText>Male</TranslatedText>
@@ -127,20 +156,50 @@
 					</Decode>
 				</CodeListItem>
 			</CodeList>
-      <MethodDef OID="ME_1" Name="Method 1" Type="Computation">
-          <Description>
-              <TranslatedText>Text value</TranslatedText>
-          </Description>
-      </MethodDef>
-      <ConditionDef OID="CD_1" Name="ConditionDef 1">
-          <Description>
-              <TranslatedText>Text value</TranslatedText>
-          </Description>
-          <FormalExpression Context="Julia">1 + 1</FormalExpression>
-      </ConditionDef>
+			<ConditionDef OID="CD_1" Name="ConditionDef 1">
+          		<Description>
+            	  	<TranslatedText>Text value</TranslatedText>
+          		</Description>
+         		<FormalExpression Context="Julia">1 + 1</FormalExpression>
+				<Alias Context = "context" Name = "name"></Alias>
+      		</ConditionDef>
+      		<MethodDef OID="ME_1" Name="Method 1" Type="Imputation">
+          		<Description>
+              		<TranslatedText>Text value</TranslatedText>
+          		</Description>
+				<Alias Context = "context" Name = "name"></Alias>
+      		</MethodDef>
 		</MetaDataVersion>
     </Study>
     <AdminData StudyOID = "ST_1_1">
+		<User OID = "useroid_1">
+			<LoginName>LoginName</LoginName>
+			<DisplayName>DisplayName</DisplayName>
+			<FullName>FullName</FullName>
+			<FirstName>FirstName</FirstName>
+			<LastName>LastName</LastName>
+			<Organization>Organization</Organization>
+			<Organization>Organization</Organization>
+			<Address>
+				<StreetName>StreetName</StreetName>
+				<City>City</City>
+				<StateProv>StateProv</StateProv>
+				<Country>Country</Country>
+				<PostalCode>PostalCode</PostalCode>
+				<OtherText>OtherText</OtherText>
+			</Address>
+			<Email>Email</Email>
+			<Picture PictureFileName = "filename.png"/>
+			<Pager>Pager</Pager>
+			<Fax>Fax</Fax>
+			<Phone>Phone</Phone>
+			<LocationRef LocationOID = "LOC_001"/>
+			<Certificate>Certificate</Certificate>
+
+		</User>
+		<Location OID = "LOC_001" Name = "name">
+			<MetaDataVersionRef StudyOID = "ST_1_1" MetaDataVersionOID = "mdv_1" EffectiveDate = "2020-10-26"/>
+		</Location>
     </AdminData>
     <ReferenceData StudyOID="ST_1_1" MetaDataVersionOID="mdv_1">
     </ReferenceData>
@@ -157,8 +216,8 @@
                 </FormData>
 				<FormData FormOID="FORM_VD_1">
 					<ItemGroupData ItemGroupOID="VIT_IG_1">
-                        <ItemData ItemOID="I_1" Value="120"/>
-                        <ItemData ItemOID="I_2" Value="80"/>
+						<ItemDataInteger ItemOID="I_1">120</ItemDataInteger>
+						<ItemDataInteger ItemOID="I_2">80</ItemDataInteger>
                         <ItemDataInteger ItemOID="I_3">63</ItemDataInteger>
                     </ItemGroupData>
                 </FormData>
@@ -178,7 +237,7 @@
 					<ItemGroupData ItemGroupOID="VIT_IG_1">
                         <ItemData ItemOID="I_1" Value="121"/>
                         <ItemData ItemOID="I_2" Value="79"/>
-                        <ItemDataInteger ItemOID="I_3">62</ItemDataInteger>
+						<ItemData ItemOID="I_3" Value="62"/>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>
@@ -191,7 +250,7 @@
                     <ItemGroupData ItemGroupOID="DE_IG_1">
                         <ItemData ItemOID="DE_1" Value="M"/>
 						<ItemData ItemOID="DE_2" Value="62"/>
-						<ItemDataInteger ItemOID="DE_3">1</ItemDataInteger>
+						<ItemData ItemOID="DE_3" Value="1"/>
                     </ItemGroupData>
 					<ItemGroupData ItemGroupOID="AN_IG_2">
                         <ItemDataInteger ItemOID="AN_1">175</ItemDataInteger>
@@ -201,7 +260,7 @@
 					<ItemGroupData ItemGroupOID="VIT_IG_1">
                         <ItemData ItemOID="I_1" Value="121"/>
                         <ItemData ItemOID="I_2" Value="86"/>
-                        <ItemDataInteger ItemOID="I_3">65</ItemDataInteger>
+						<ItemData ItemOID="I_2" Value="65"/>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>
@@ -210,8 +269,8 @@
             <StudyEventData StudyEventOID="SE_VIZIT1">
                 <FormData FormOID="FORM_DEAN_1">
                     <ItemGroupData ItemGroupOID="DE_IG_1">
-                        <ItemData ItemOID="DE_1" Value="F"/>
-						<ItemData ItemOID="DE_2" Value="55"/>
+						<ItemDataString ItemOID="DE_1">F</ItemDataString>
+						<ItemDataInteger ItemOID="DE_2">55</ItemDataInteger>
 						<ItemDataInteger ItemOID="DE_3">2</ItemDataInteger>
                     </ItemGroupData>
 					<ItemGroupData ItemGroupOID="AN_IG_2">
@@ -222,7 +281,7 @@
 					<ItemGroupData ItemGroupOID="VIT_IG_1">
                         <ItemData ItemOID="I_1" Value="120"/>
                         <ItemData ItemOID="I_2" Value="88"/>
-                        <ItemDataInteger ItemOID="I_3">61</ItemDataInteger>
+						<ItemData ItemOID="I_3" Value="61"/>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>
@@ -234,7 +293,7 @@
                 <FormData FormOID="FORM_DEAN_1">
                     <ItemGroupData ItemGroupOID="DE_IG_1">
                         <ItemDataInteger ItemOID="DE_1">1</ItemDataInteger>
-						<ItemData ItemOID="DE_2" Value="49"/>
+						<ItemDataInteger ItemOID="DE_2">49</ItemDataInteger>
 						<ItemDataInteger ItemOID="DE_3">2</ItemDataInteger>
                     </ItemGroupData>
 					<ItemGroupData ItemGroupOID="AN_IG_2">
@@ -245,7 +304,7 @@
 					<ItemGroupData ItemGroupOID="VIT_IG_1">
                         <ItemData ItemOID="I_1" Value="119"/>
                         <ItemData ItemOID="I_2" Value="85"/>
-                        <ItemDataInteger ItemOID="I_3">63</ItemDataInteger>
+						<ItemData ItemOID="I_3" Value="63"/>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>
@@ -255,7 +314,7 @@
                 <FormData FormOID="FORM_DEAN_1">
                     <ItemGroupData ItemGroupOID="DE_IG_1">
                         <ItemDataInteger ItemOID="DE_1">2</ItemDataInteger>
-						<ItemData ItemOID="DE_2" Value="52"/>
+						<ItemDataInteger ItemOID="DE_2">52</ItemDataInteger>
 						<ItemDataInteger ItemOID="DE_3">1</ItemDataInteger>
                     </ItemGroupData>
 					<ItemGroupData ItemGroupOID="AN_IG_2">
@@ -266,7 +325,7 @@
 					<ItemGroupData ItemGroupOID="VIT_IG_1">
                         <ItemData ItemOID="I_1" Value="120"/>
                         <ItemData ItemOID="I_2" Value="85"/>
-                        <ItemDataInteger ItemOID="I_3">60</ItemDataInteger>
+						<ItemData ItemOID="I_3" Value="60"/>
                     </ItemGroupData>
                 </FormData>
             </StudyEventData>

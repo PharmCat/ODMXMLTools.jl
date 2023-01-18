@@ -132,7 +132,7 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
     for k in keys(node.attr)
         k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
     end
-    if !existchildtextnode(node) push!(log, "$(name(node)): No text node in body") end
+    if node.content == "" push!(log, "$(name(node)): No content is empty.") end
     for i in children(node)
         if !isa(i, ODMTextNode) push!(log, "$(name(node)): Unexpected node ($(name(i))) in body") end
     end
@@ -491,10 +491,8 @@ end
 function nodenameslist(node)
     set = Set{Symbol}()
     ch = children(node)
-    for i in ch
-        if havename(i)
-            push!(set, name(i))
-        end
+    for i in ch 
+        push!(set, name(i))
     end
     set
 end
@@ -506,17 +504,186 @@ function existchildtextnode(node)
     false
 end
 
-
 function validateodm_!(log::AbstractVector, root::ODMRoot, node::AbstractODMNode)
     checknode!(log, root, node, ODMNodeType(name(node)))
     for i in node.el
         validateodm_!(log, root, i)
     end
 end
-function validateodm_!(log::AbstractVector, root::ODMRoot, node::ODMTextNode)
-end
+
+"""
+    validateodm(odm::ODMRoot)
+
+Basic structure validation.
+
+!!! warning
+    Not full implemented.
+
+"""
 function validateodm(odm::ODMRoot)
     log = String[]
     validateodm_!(log, odm, odm)
     log
+end
+
+
+"""
+    checkdatavalues(odm::ODMRoot)
+
+Check all data values in all ClinicalData sections.
+
+!!! warning
+    Not full implemented.
+"""
+function checkdatavalues(odm::ODMRoot)
+    cld  = findclinicaldata(odm)
+    log = []
+    for cldv in cld
+        mdv = buildmetadata(odm, attribute(cldv, :StudyOID), attribute(cldv, :MetaDataVersionOID))
+        idd = defdict(mdv, :ItemDef)
+        cldd = defdict(mdv, :CodeList)
+        for s in cldv.el
+            if isSubjectData(s)
+                for e in s.el
+                    if isStudyEventData(e) 
+                        for f in e.el
+                            if isFormData(f)
+                                for g in f.el
+                                    if isItemGroupData(g)
+                                        for i in g.el
+                                            if isItemData(i) || isItemDataType(i)
+                                                if isItemData(i)
+                                                    val = attribute(i, :Value)
+                                                else
+                                                    val = content(i)
+                                                end
+                                                if attribute(i, :IsNull) == "Yes" && val != ""
+                                                    pushlog!(log, :WARN, s, e, f, g, i, "Attribute `IsNull` set `Yes`, but value not empty")
+                                                end
+                                                if attribute(i, :ItemOID) ∉ keys(idd)
+                                                    pushlog!(log, :ERROR, s, e, f, g, i, "ItemOID not found in ItemRef list.")
+                                                    continue
+                                                end
+                                                idef = idd[attribute(i, :ItemOID)]
+                                                itype = attribute(idef, :DataType)
+                                                if isItemDataType(i)
+                                                    msg = ""
+                                                    if name(i) == :ItemDataAny
+	                                                elseif name(i) == :ItemDataString
+                                                        if itype != "string" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataInteger
+                                                        if itype != "integer" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataFloat
+                                                        if itype != "float" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataDate
+                                                        if itype != "date" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataTime
+                                                        if itype != "time" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataDatetime
+                                                        if itype != "datetime" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataBoolean
+                                                        if itype != "boolean" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataHexBinary
+                                                        if itype != "hexBinary" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataBase64Binary
+                                                        if itype != "base64Binary" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataHexFloat
+                                                        if itype != "hexFloat" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataBase64Float
+                                                        if itype != "base64Float" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataPartialDate
+                                                        if itype != "partialDate" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataPartialTime
+                                                        if itype != "partialTime" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataPartialDatetime
+                                                        if itype != "partialDatetime" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataDurationDatetime
+                                                        if itype != "durationDatetime" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataIntervalDatetime
+                                                        if itype != "intervalDatetime" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataIncompleteDatetime
+                                                        if itype != "incompleteDatetime" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataIncompleteDate
+                                                        if itype != "incompleteDate" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataIncompleteTime
+                                                        if itype != "incompleteTime" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    elseif name(i) == :ItemDataURI
+                                                        if itype != "URI" msg = "DataType inconsistent: $(name(i)) != $itype" end
+                                                    end
+                                                    if msg != ""
+                                                        pushlog!(log, :WARN, s, e, f, g, i, msg)
+                                                    end
+                                                end
+                                                if itype == "integer"
+                                                    pval = tryparse(Int, val)
+                                                elseif itype == "float" || itype == "double" 
+                                                    pval = tryparse(Float64, val)
+                                                elseif itype == "boolean"
+                                                    pval = tryparse(Bool, "false")
+                                                else
+                                                    pval = ""
+                                                end
+                                                if isnothing(pval)
+                                                    pushlog!(log, :WARN, s, e, f, g, i, "DataType is $(itype), but value `$val` can't be parsed.")
+                                                end
+                                                clr = findelement(idef, :CodeListRef)
+                                                if !isnothing(clr)
+                                                    cld = cldd[attribute(clr, :CodeListOID)]
+                                                    if attribute(cld, :DataType) != itype
+                                                        pushlog!(log, :ERROR, s, e, f, g, i, "ItemDef DataType ($(itype)) not equal CodeList's DataType ($(attribute(cld, :DataType))).")
+                                                    end
+                                                    cvs = codedvalueset(cld)
+                                                    if length(cvs) > 0
+                                                        if val ∉ cvs
+                                                            pushlog!(log, :WARN, s, e, f, g, i, "Value ($(val)) not in CodeListItem's CodedValue set.")
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    log
+end
+
+
+function defdict(mdv, nname)
+    d = Dict{String, ODMNode}()
+    for i in mdv.el
+        if name(i) == nname
+            d[attribute(i, :OID)] = i
+        end
+    end
+    d
+end
+
+function codedvalueset(n)
+    s = Set{String}()
+    for i in n.el
+        if name(n) == :CodeListItem
+            push!(s, attribute(i, :CodedValue))
+        end
+    end
+    s
+end
+
+
+function pushlog!(log, t, s, e, f, g, i, msg)
+    push!(log, (t, 
+    attribute(s, :SubjectKey),
+    attribute(e, :StudyEventOID),
+    attribute(e, :StudyEventRepeatKey),
+    attribute(f, :FormOID),
+    attribute(f, :FormRepeatKey),
+    attribute(g, :ItemGroupOID),
+    attribute(g, :ItemGroupRepeatKey),
+    attribute(i, :ItemOID),
+    msg))
 end

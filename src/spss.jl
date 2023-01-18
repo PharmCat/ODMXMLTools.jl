@@ -43,7 +43,7 @@ end
 
 
 """
-spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name)
+    spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name)
 
 SPSS command to set variable labels.
 
@@ -119,6 +119,11 @@ function spss_form_value_labels(mdb, form; variable = :OID)
     SPSSValueLabels(v)
 end
 
+"""
+    spss_events_value_labels(mdb; variable = "StudyEventOID", value::Symbol = :OID, label::Symbol = :Name)
+
+Labels for event values.
+"""
 function spss_events_value_labels(mdb; variable = "StudyEventOID", value::Symbol = :OID, label::Symbol = :Name)
     events = findelements(mdb, :StudyEventDef)
     p   = Vector{Pair}(undef, 0) 

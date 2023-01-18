@@ -10,30 +10,35 @@ struct ODMNodeType{Symbol} <: AbstractODMNodeType
     end
 end
 
-struct ODMRoot <: AbstractODMNode
-    name::Symbol
-    attr::Dict{Symbol, String}
-    el::Vector{AbstractODMNode}
-    ns::Vector
-    function ODMRoot(attr, ns)
-        new(:ODM, attr, AbstractODMNode[], ns)
-    end
-end
-
 struct ODMNode <: AbstractODMNode
     name::Symbol
     attr::Dict{Symbol, String}
-    el::Vector{AbstractODMNode}
-    function ODMNode(name, attr, el)
-        new(name, attr, el)
+    el::Vector{ODMNode}
+    content::String
+    function ODMNode(name, attr, content) 
+        new(name, attr, ODMNode[], content)
     end
     function ODMNode(name, attr)
-        ODMNode(name, attr, AbstractODMNode[])
+        ODMNode(name, attr, ODMNode[], "")
     end
 end
+
+struct ODMRoot <: AbstractODMNode
+    name::Symbol
+    attr::Dict{Symbol, String}
+    el::Vector{ODMNode}
+    ns::Vector
+    function ODMRoot(attr, ns)
+        new(:ODM, attr, ODMNode[], ns)
+    end
+end
+
+#=
 struct ODMTextNode <: AbstractODMNode
     content::String
 end
+=#
+
 struct StudyMetaData <: AbstractODMNode
     metadata::ODMNode
     el::Vector{AbstractODMNode}
@@ -48,17 +53,20 @@ end
 function Base.show(io::IO, n::StudyMetaData)
     print(io, "Completed Study MetaData ($(length(n.el)) elements), OID: $(attribute(n.metadata, :OID)), Name: $(attribute(n.metadata, :Name))")
 end
+#=
 function Base.show(io::IO, n::ODMTextNode)
     print(io, "Text Node")
 end
-
+=#
 
 function AbstractTrees.children(x::T) where T <: AbstractODMNode
     x.el
 end
+#=
 function AbstractTrees.children(::ODMTextNode)
     []
 end
+=#
 #=
 function AbstractTrees.childtype(n::AbstractODMNode)
     eltype(n.el)
@@ -82,11 +90,19 @@ function makenode(str, attr)
     #symb = Symbol(str)
     return ODMNode(Symbol(str), attr)
 end
+#=
 function makenode(content::String)
     return ODMTextNode(content)
 end
+=#
 function attributes_dict(n)
     d = Dict{Symbol, String}()
+    for i in eachattribute(n)
+        d[Symbol(i.name)] = i.content
+    end
+    d
+end
+function attributes_dict!(d, n)
     for i in eachattribute(n)
         d[Symbol(i.name)] = i.content
     end
@@ -107,22 +123,25 @@ function importxml(file::AbstractString)
     odm
 end
     function importxml_(parent, root)
-        if haselement(root)
-            chld = EzXML.eachelement(root)
-            for c in chld
-                if iselement(c)
-                    attr = attributes_dict(c)
-                    odmn = makenode(nodename(c), attr)
-                    push!(parent.el, odmn)
-                    if hasnode(c) importxml_(odmn, c) end
-                end
-            end
-        else
+        if hasnode(root)
             chld = EzXML.eachnode(root)
             for c in chld
-                if istext(c)
-                    odmn = makenode(nodecontent(c))
+                content = ""
+                attr = Dict{Symbol, String}()
+                if iselement(c)
+                    attributes_dict!(attr, c)
+                    if !haselement(c)
+                        tv = EzXML.eachnode(root)
+                        for t in tv
+                            if istext(t)
+                                content = nodecontent(c)
+                                break
+                            end
+                        end
+                    end
+                    odmn = ODMNode(Symbol(nodename(c)), attr, content)
                     push!(parent.el, odmn)
+                    if haselement(c) importxml_(odmn, c) end
                 end
             end
         end
@@ -148,24 +167,26 @@ end
 function name(n::ODMNode)
     getfield(n, :name)
 end
+#=
 function name(n::ODMTextNode)
     nothing
 end
-
+=#
+#=
 function havename(node::AbstractODMNode)
     !isa(node, ODMTextNode)
 end
+=#
+isMetaDataVersion(node::AbstractODMNode) = name(node) == :MetaDataVersion
+isStudy(node::AbstractODMNode) = name(node) == :Study
 
-
+isClinicalData(node::AbstractODMNode) = name(node) == :ClinicalData
+isSubjectData(node::AbstractODMNode) = name(node) == :SubjectData
 isStudyEventData(node::AbstractODMNode) = name(node) == :StudyEventData
 isFormData(node::AbstractODMNode) = name(node) == :FormData
 isItemGroupData(node::AbstractODMNode) = name(node) == :ItemGroupData
 isItemData(node::AbstractODMNode) = name(node) == :ItemData
 isItemDataType(node::AbstractODMNode) = name(node) in ITEMDATATYPE
-isSubjectData(node::AbstractODMNode) = name(node) == :SubjectData
-isMetaDataVersion(node::AbstractODMNode) = name(node) == :MetaDataVersion
-isStudy(node::AbstractODMNode) = name(node) == :Study
-isClinicalData(node::AbstractODMNode) = name(node) == :ClinicalData
 
 
 function have_attr(n::AbstractODMNode, attr::Symbol)
@@ -192,17 +213,13 @@ function appendelements!(inds::AbstractVector, n::AbstractODMNode, nname::Union{
     inds
 end
 
-
+#=
 function content(n::ODMTextNode)
     getfield(n, :content)
 end
+=#
 function content(n::AbstractODMNode)
-    for i in n.el
-        if isa(i, ODMTextNode)
-            return content(i)
-        end
-    end
-    nothing
+    n.content
 end
 
 function getitemdatavalue(n::AbstractODMNode, null)
@@ -273,7 +290,7 @@ Base.findfirst(n::AbstractODMNode, args...) = findelement(n, args...)
 #Base.findfirst(n::AbstractODMNode, nname::Symbol, oid::AbstractString) = findelement(n, nname, oid)
 
 function findelements_(n, nname::Symbol)
-    inds = AbstractODMNode[]
+    inds = ODMNode[]
     for i in n
         if name(i) == nname
             push!(inds, i)
@@ -283,7 +300,7 @@ function findelements_(n, nname::Symbol)
 end
 
 function findelements_(n, nnames::Vector{Symbol})
-    inds = AbstractODMNode[]
+    inds = ODMNode[]
     for i in n
         if name(i) in nnames
             push!(inds, i)
@@ -399,7 +416,7 @@ Find ClinicalData by StudyOID.
 Returns vector.
 """
 function findclinicaldata(odm::ODMRoot, soid::AbstractString)
-    inds = AbstractODMNode[]
+    inds = ODMNode[]
     for i in odm.el
         if isClinicalData(i) && attribute(i, "StudyOID") == soid 
             push!(inds, i)
@@ -415,7 +432,7 @@ Find all ClinicalData.
 Returns vector.
 """
 function findclinicaldata(odm::ODMRoot)
-    inds = AbstractODMNode[]
+    inds = ODMNode[]
     for i in odm.el
         if isClinicalData(i)
             push!(inds, i)
@@ -601,7 +618,7 @@ end
 ################################################################################
 function formcontent_(md, oid)
     ig   = findelement(md, :FormDef, oid)
-    inds = AbstractODMNode[]
+    inds = ODMNode[]
     for i in ig.el
         if name(i) == :ItemGroupRef
             el = findelement(md, :ItemGroupDef, attribute(i, "ItemGroupOID"))
@@ -613,7 +630,7 @@ end
 
 function itemgroupcontent_(md, oid)
     ig   = findelement(md, :ItemGroupDef, oid)
-    inds = AbstractODMNode[]
+    inds = ODMNode[]
     for i in ig.el
         if name(i) == :ItemRef
             el = findelement(md, :ItemDef, attribute(i, "ItemOID"))
@@ -650,7 +667,7 @@ end
 # Item form content
 ###############################################################################
 function itemformcontent_(md, oid; kwargs...)
-    inds   = AbstractODMNode[]
+    inds   = ODMNode[]
     frm    = findelement(md, :FormDef, oid)
     if isnothing(frm) return inds end
     iginds = findelements(frm, :ItemGroupRef)
@@ -689,6 +706,8 @@ function buildmetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
+
+
 """
     buildmetadata(odm::ODMRoot, moid::AbstractString)
 
@@ -730,7 +749,7 @@ function codelisttable(cd::AbstractODMNode; lang = nothing)
     df = DataFrame(OID = String[], Name = String[], DataType = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
 
     cll  = findelements(cd, :CodeList)
-    clil = AbstractODMNode[] # CodeListItem
+    clil = ODMNode[] # CodeListItem
     for cl in cll
         resize!(clil, 0)
         appendelements!(clil, cl, :CodeListItem)
@@ -782,6 +801,17 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
 end
 
 
+function dfpush!(df, s, e, f, g, i, null)
+    push!(df, (s,
+    attribute(e, :StudyEventOID),
+    attribute(e, :StudyEventRepeatKey),
+    attribute(f, :FormOID),
+    attribute(f, :FormRepeatKey),
+    attribute(g, :ItemGroupOID),
+    attribute(g, :ItemGroupRepeatKey),
+    attribute(i, :ItemOID),
+    getitemdatavalue(i, null)))
+end
 """
     clinicaldatatable(cd::AbstractODMNode;
         itemgroup = nothing,
@@ -805,6 +835,7 @@ Return clinical data table in long formal. `cd` should be ClinicalData.
 function clinicaldatatable(cd::AbstractODMNode;
         itemgroup = nothing,
         form = nothing,
+        event = nothing,
         item::Union{Nothing, AbstractString, <: AbstractVector{<:AbstractString}} = nothing,
         categ = false, 
         addstudyid = false,
@@ -819,18 +850,56 @@ function clinicaldatatable(cd::AbstractODMNode;
     datatype = String
     #df = DataFrame(SubjectKey = String[], StudyEventOID = CategoricalArray(String[]), FormOID = CategoricalArray(String[]), ItemGroupOID = CategoricalArray(String[]), ItemGroupRepeatKey = CategoricalArray(String[]), ItemOID = CategoricalArray(String[]), Value = String[])
     df = DataFrame(SubjectKey = String[], StudyEventOID = String[], StudyEventRepeatKey = String[], FormOID = String[], FormRepeatKey = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = datatype[])
-    sdl = findelements(cd, :SubjectData)
-    edl = AbstractODMNode[]
-    fdl = AbstractODMNode[]
-    gdl = AbstractODMNode[]
-    idl = AbstractODMNode[]
-
+    #sdl = findelements(cd, :SubjectData)
+    #edl = ODMNode[]
+    #fdl = ODMNode[]
+    #gdl = ODMNode[]
+    #idl = ODMNode[]
     if isnothing(idlnames)
         idlnames = pushfirst!(collect(ITEMDATATYPE), :ItemData)
     end
-
     if isa(item, AbstractString) item = [item] end
-    #sdl = Iterators.filter(isSubjectData, cd.el)
+    
+    for s in cd.el
+        if isSubjectData(s)
+            if addstudyid
+                subjid = attribute(cd, :StudyOID)*"_"*attribute(s, :SubjectKey)
+            else
+                subjid = attribute(s, :SubjectKey)
+            end
+            for e in s.el
+                if isStudyEventData(e)
+                    if !isnothing(event)
+                        if attribute(e, :StudyEventOID) != event continue end
+                    end 
+                    for f in e.el
+                        if isFormData(f)
+                            if !isnothing(form)
+                                if attribute(f, :FormOID) != form continue end
+                            end
+                            for g in f.el
+                                if isItemGroupData(g)
+                                    if !isnothing(itemgroup)
+                                        if attribute(g, :ItemGroupOID) != itemgroup continue end
+                                    end
+                                    for i in g.el
+                                        if isItemData(i) || isItemDataType(i)
+                                            if !isnothing(item)
+                                                if !(attribute(i, :ItemOID) in item) continue end
+                                            end
+                                            dfpush!(df, subjid, e, f, g, i, null)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    #=
     for s in sdl
         if addstudyid
             subjid = attribute(cd, :StudyOID)*"_"*attribute(s, :SubjectKey)
@@ -839,15 +908,12 @@ function clinicaldatatable(cd::AbstractODMNode;
         end
         resize!(edl, 0)
         appendelements!(edl, s, :StudyEventData)
-        #edl = Iterators.filter(isStudyEventData, s.el)
         for e in edl
             resize!(fdl, 0)
             appendelements!(fdl, e, :FormData)
-            #fdl = Iterators.filter(isFormData, e.el)
             for f in fdl
                 resize!(gdl, 0)
                 appendelements!(gdl, f, :ItemGroupData)
-                #gdl = Iterators.filter(isItemGroupData, f.el)
                 for g in gdl
                     if !isnothing(itemgroup)
                         if attribute(g, :ItemGroupOID) != itemgroup continue end
@@ -857,7 +923,6 @@ function clinicaldatatable(cd::AbstractODMNode;
                     end
                     resize!(idl, 0)
                     appendelements!(idl, g, idlnames)
-                    #idl = Iterators.filter(isItemData, g.el) 
                     for i in idl
                         if !isnothing(item)
                             if !(attribute(i, :ItemOID) in item) continue end
@@ -876,6 +941,7 @@ function clinicaldatatable(cd::AbstractODMNode;
             end
         end
     end
+    =#
     if categ
         transform!(df, :StudyEventOID => categorical, renamecols=false)
         transform!(df, :FormOID => categorical, renamecols=false)
@@ -1056,7 +1122,7 @@ function inlist(n, dest)
     false
 end
 function fillstmd_(dest, source, odm)
-    inds = AbstractODMNode[]
+    inds = ODMNode[]
     for i in source.el
         if !inlist(i, dest)
             push!(inds, i)
