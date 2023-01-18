@@ -43,14 +43,14 @@ ODMXMLTools.itemcodelisttable
 ODMXMLTools.metadatalist
 ```
 
-### ODMXMLTools.clinicaldatalist
-```@docs
-ODMXMLTools.clinicaldatalist
-```
-
 ### ODMXMLTools.studylist
 ```@docs
 ODMXMLTools.studylist
+```
+
+### ODMXMLTools.clinicaldatalist
+```@docs
+ODMXMLTools.clinicaldatalist
 ```
 
 ### ODMXMLTools.eventlist

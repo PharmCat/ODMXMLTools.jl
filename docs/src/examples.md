@@ -7,7 +7,9 @@ path = joinpath(dirname(pathof(ODMXMLTools)), "..", "test")
 nothing; # hide
 ```
 
-### First step - load XML
+### Load ODM-XML
+
+ODMXMLTools.jl doesn't check correctness of *.xml file. 
 
 ```@example odmexample
 using ODMXMLTools;
@@ -16,29 +18,52 @@ using ODMXMLTools;
 
 odm = ODMXMLTools.importxml(joinpath(path, "test.xml"))
 ```
+Then you can get MetaDataVersion list, Study list, ClinicalData list and other. 
 
 ```@example odmexample
 # Get metadata list
 ODMXMLTools.metadatalist(odm)
 ```
 
-### Second step - build metadata
+```@example odmexample
+# Get study list
+ODMXMLTools.studylist(odm)
+```
+
+```@example odmexample
+# Get clinical data list
+ODMXMLTools.clinicaldatalist(odm)
+```
+
+### Build metadata
 
 ```@example odmexample
 # Build metadata
-mdb = ODMXMLTools.buildmetadata(odm, "ST1", "v2")
+mdb = ODMXMLTools.buildmetadata(odm, "ST_2_1", "mdv_2")
 ```
 
-### Third step - get tables
+### Find clinical data and get observation data
+
+```@example odmexample
+# Find clinical data
+cdat = ODMXMLTools.findclinicaldata(odm, "ST_2_1", "mdv_2")
+```
+
+```@example odmexample
+# Get clinical data
+ODMXMLTools.clinicaldatatable(cdat)
+```
+
+### Get tables
 
 ```@example odmexample
 # Find study
-st1 =  ODMXMLTools.findstudy(odm, "ST1")
+st1 =  ODMXMLTools.findstudy(odm, "ST_2_1")
 ```
 
 ```@example odmexample
 # Find element
-ODMXMLTools.findelement(st1, :MetaDataVersion, "v2")
+ODMXMLTools.findelement(st1, :MetaDataVersion, "mdv_2")
 ```
 
 ```@example odmexample
@@ -61,18 +86,6 @@ ODMXMLTools.itemgrouplist(mdb)
 ODMXMLTools.itemlist(mdb)
 ```
 
-### Find clinical data and get observation data
-
-```@example odmexample
-# Find clinical data
-cdat = ODMXMLTools.findclinicaldata(odm, "ST1", "v2")
-```
-
-```@example odmexample
-# Get clinical data
-ODMXMLTools.clinicaldatatable(cdat)
-```
-
 ### Also
 
 ```@example odmexample
@@ -83,4 +96,33 @@ ODMXMLTools.subjectdatatable(odm; attrs = [:SubjectKey, :StudySubjectID])
 ```@example odmexample
 # Study information
 ODMXMLTools.studyinfo(odm)
+```
+
+### Validation
+
+```@example odmexample
+# Basic validation
+ODMXMLTools.validateodm(odm)
+```
+
+```@example odmexample
+# Data validation
+ODMXMLTools.checkdatavalues(odm)
+```
+
+### SPSS features
+
+```@example odmexample
+# Value labesl
+ODMXMLTools.spss_form_value_labels(mdb, "FORM_DEAN_1"; variable = :OID)
+```
+
+```@example odmexample
+# Variable labels
+ODMXMLTools.spss_form_variable_labels(mdb, "FORM_DEAN_1"; variable = :SASFieldName)
+```
+
+```@example odmexample
+# Event value labels
+ODMXMLTools.spss_events_value_labels(mdb; variable = "StudyEventOID", value = :OID, label = :Name)
 ```
