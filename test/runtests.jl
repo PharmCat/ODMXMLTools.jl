@@ -179,4 +179,5 @@ using Test
     #@test ODMXMLTools.ischild(c[1], odm)
 
     @test_nowarn show(io, ODMXMLTools.NODEINFO[:Study])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:GlobalVariables])
 end
