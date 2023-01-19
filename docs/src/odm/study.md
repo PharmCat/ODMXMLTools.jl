@@ -1,14 +1,14 @@
-## Body
+### Body
 
 	(GlobalVariables, BasicDefinitions?, MetaDataVersion*)
 
-## Attributes
+### Attributes
 
-*	OID 	oid 		
+* OID 	oid 		
 
-## Contained in
+### Contained in
 
-*	ODM
+* ODM
 
 This element collects static structural information about an individual study.
 

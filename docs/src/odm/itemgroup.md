@@ -1,23 +1,23 @@
-## Body
+### Body
 
-	(Description?, ItemRef*, Alias*)
+(Description?, ItemRef*, Alias*)
 
-## Attributes
+### Attributes
 
-*	OID 	oid 		
-*	Name 	name 		
-*	Repeating 	(Yes | No) 		
-*	IsReferenceData 	(Yes | No) 	(optional) 	
-*	SASDatasetName 	sasName 	(optional) 	
-*	Domain 	text 	(optional) 	
-*	Origin 	text 	(optional)	
-*	Role 	name 	(optional) 	Deprecated
-*	Purpose 	text 	(optional)	
-*	Comment 	text 	(optional) 	
+* OID 	oid 		
+* Name 	name 		
+* Repeating 	(Yes | No) 		
+* IsReferenceData 	(Yes | No) 	(optional) 	
+* SASDatasetName 	sasName 	(optional) 	
+* Domain 	text 	(optional) 	
+* Origin 	text 	(optional)	
+* Role 	name 	(optional) 	Deprecated
+* Purpose 	text 	(optional)	
+* Comment 	text 	(optional) 	
 
-## Contained in
+### Contained in
 
-*	MetaDataVersion
+* MetaDataVersion
 
 An ItemGroupDef describes a type of item group that can occur within a study.
 

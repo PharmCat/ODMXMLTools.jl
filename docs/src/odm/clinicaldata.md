@@ -1,15 +1,15 @@
-## Body
+### Body
 
-	(SubjectData*, AuditRecords*, Signatures*, Annotations*)
+(SubjectData*, AuditRecords*, Signatures*, Annotations*)
 
-## Attributes
+### Attributes
 
-*	StudyOID 	oidref 		References the Study that uses the data nested within this element.
-*	MetaDataVersionOID 	oidref 		References the MetaDataVersion (within the above Study) that governs the data nested within this element.
+* StudyOID 	oidref 		References the Study that uses the data nested within this element.
+* MetaDataVersionOID 	oidref 		References the MetaDataVersion (within the above Study) that governs the data nested within this element.
 
-## Contained in
+### Contained in
 
-*	ODM
+* ODM
 
 Clinical data for multiple subjects.
 

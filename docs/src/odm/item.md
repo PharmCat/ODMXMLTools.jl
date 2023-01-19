@@ -1,22 +1,22 @@
-## Body
+### Body
 
-	(Description?, Question?, ExternalQuestion?, MeasurementUnitRef*, RangeCheck*, CodeListRef?, Role* Deprecated, Alias*)
+(Description?, Question?, ExternalQuestion?, MeasurementUnitRef*, RangeCheck*, CodeListRef?, Role* Deprecated, Alias*)
 
-## Attributes
+### Attributes
 
-*	OID 	oid 		
-*	Name 	name 		
-*	DataType 	(text | integer | float | date | time | datetime | string | boolean | double | hexBinary | base64Binary | hexFloat | base64Float | partialDate | partialTime | partialDatetime | durationDatetime | intervalDatetime | incompleteDatetime | incompleteDate | incompleteTime | URI ) 		
-*	Length 	positiveInteger 	(optional) 	
-*	SignificantDigits 	nonNegativeInteger 	(optional)	
-*	SASFieldName 	sasName 	(optional) 	
-*	SDSVarName 	sasName 	(optional) 	
-*	Origin 	text 	(optional) 	
-*	Comment 	text 	(optional) 	
+* OID 	oid 		
+* Name 	name 		
+* DataType 	(text | integer | float | date | time | datetime | string | boolean | double | hexBinary | base64Binary | hexFloat | base64Float | partialDate | partialTime | partialDatetime | durationDatetime | intervalDatetime | incompleteDatetime | incompleteDate | incompleteTime | URI ) 		
+* Length 	positiveInteger 	(optional) 	
+* SignificantDigits 	nonNegativeInteger 	(optional)	
+* SASFieldName 	sasName 	(optional) 	
+* SDSVarName 	sasName 	(optional) 	
+* Origin 	text 	(optional) 	
+* Comment 	text 	(optional) 	
 
-# Contained in
+### Contained in
 
-*	MetaDataVersion
+* MetaDataVersion
 
 An ItemDef describes a type of item that can occur within a study. Item properties include name, datatype, measurement units, range or codelist restrictions, and several other properties.
 
