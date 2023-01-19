@@ -1,8 +1,8 @@
 struct NodeInfo
-    val
-    parent
-    attrs
-    body
+    val::Symbol
+    parent::Symbol
+    attrs::Vector
+    body::Union{Vector, String}
 end
 
 function attps(s::Symbol)
@@ -52,6 +52,11 @@ const NODEINFO = Dict{Symbol, NodeInfo}(
     :ODM,
     [(:OID, :!, "OID")],
     [(:GlobalVariables, :!), (:BasicDefinitions, :?), (:MetaDataVersion, :*)]
+    ),
+:GlobalVariables => NodeInfo(:GlobalVariables, 
+    :Study,
+    [],
+    [(:StudyName, :!), (:StudyDescription, :!), (:ProtocolName, :!)]
     )
 
 )
