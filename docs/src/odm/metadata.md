@@ -1,16 +1,16 @@
-## Body
+### Body
 
-	(Include?, Protocol?, StudyEventDef*, FormDef*, ItemGroupDef*, ItemDef*, CodeList*, ImputationMethod*Deprecated, Presentation*, ConditionDef*, MethodDef*)
+(Include?, Protocol?, StudyEventDef*, FormDef*, ItemGroupDef*, ItemDef*, CodeList*, ImputationMethod*Deprecated, Presentation*, ConditionDef*, MethodDef*)
 
-## Attributes
+### Attributes
 
-*	OID 	oid 		
-*	Name 	name 		
-*	Description 	text 	(optional) 	
+* OID 	oid 		
+* Name 	name 		
+* Description 	text 	(optional) 	
 
-## Contained in:
+### Contained in:
 
-*	Study
+* Study
 
 A metadata version defines the types of study events, forms, item groups, and items that form the study data.
 

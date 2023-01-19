@@ -86,7 +86,8 @@ using Test
     mdv = ODMXMLTools.findelement(st1, :MetaDataVersion, "mdv_1")
     @test mdv == ODMXMLTools.findstudymetadata(odm, "ST_1_1", "mdv_1")
 
-    @test_nowarn ODMXMLTools.buildmetadata(odm, "TEMPLATE_ST_01", "mvd_tpl_1")
+    @test_nowarn ODMXMLTools.buildmetadata(odm, mdv)
+
     mdb = ODMXMLTools.buildmetadata(odm, "ST_2_1", "mdv_2")
     @test_nowarn show(io, mdb)
 

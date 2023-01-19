@@ -1,16 +1,16 @@
-## Body
+### Body
 
-	(Description?, ItemGroupRef*, ArchiveLayout*, Alias*)
+(Description?, ItemGroupRef*, ArchiveLayout*, Alias*)
 
-## Attributes
+### Attributes
 
-*	OID 	oid 		
-*	Name 	name 		
-*	Repeating 	(Yes | No) 		
+* OID 	oid 		
+* Name 	name 		
+* Repeating 	(Yes | No) 		
 
-## Contained in
+### Contained in
 
-*	MetaDataVersion
+* MetaDataVersion
 
 A FormDef describes a type of form that can occur in a study.
 

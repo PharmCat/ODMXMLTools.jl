@@ -216,9 +216,9 @@ end
 # BASIC FUNCTIONS
 ################################################################################
 """
-    findelement(n::AbstractODMNode, name::Symbol, oid::AbstractString)
+    findelement(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
 
-Find first element by name and oid.
+Find first element by node name `nname` and `oid`.
 """
 function findelement(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
     for i in n.el
@@ -232,7 +232,7 @@ end
 """
     findelement(n::AbstractODMNode, nname)
 
-Find first element by name.
+Find first element by node name `nname`.
 """
 function findelement(n::AbstractODMNode, nname::Symbol)
     for i in n.el
@@ -267,7 +267,7 @@ end
 """
     findelements(n::AbstractODMNode, nname::Symbol)
 
-Find all elements by name.
+Find all elements by node name `nname`.
 """
 function findelements(n::AbstractODMNode, nname::Symbol)
     findelements_(n.el, nname)
@@ -276,7 +276,7 @@ end
 """
     findelements(n::AbstractODMNode, nnames::Vector{Symbol})
 
-Find all elements by name in list.
+Find all elements by node name `nname` (list).
 """
 function findelements(n::AbstractODMNode, nnames::Vector{Symbol})
     findelements_(n.el, nname)
@@ -284,9 +284,9 @@ end
 
 Base.findall(n::AbstractODMNode, args...) = findelements(n, args...)
 """
-    countelements(n::AbstractODMNode, name::Symbol)
+    countelements(n::AbstractODMNode, nname::Symbol)
 
-Count elements by name.
+Count elements by node name `nname`.
 """
 function countelements(n::AbstractODMNode, nname::Symbol)
     inds = 0
@@ -353,9 +353,9 @@ end
 """
     findclinicaldata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
 
-Find ClinicalData by StudyOID and MetaDataVersionOID.
+Find ClinicalData by StudyOID (`soid`) and MetaDataVersionOID (`moid`).
 
-Returns single element or nothing.
+Returns single element or `nothing`.
 """
 function findclinicaldata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     for i in odm.el
@@ -367,9 +367,9 @@ end
 """
     findclinicaldata(odm::ODMRoot, soid::AbstractString)
 
-Find ClinicalData by StudyOID.
+Find ClinicalData by StudyOID (`soid`).
 
-Returns vector.
+Returns vector or empty vetctor if no elements found.
 """
 function findclinicaldata(odm::ODMRoot, soid::AbstractString)
     inds = ODMNode[]
@@ -385,7 +385,7 @@ end
 
 Find all ClinicalData.
 
-Returns vector.
+Returns vector or empty vetctor if no elements found.
 """
 function findclinicaldata(odm::ODMRoot)
     inds = ODMNode[]
@@ -402,7 +402,7 @@ end
 """
     findstudy(odm::ODMRoot, oid::AbstractString)
 
-Find Study element by OID (`oid`), nothing if not found.
+Find Study element by OID (`oid`), `nothing`` if not found.
 """
 function findstudy(odm::ODMRoot, oid::AbstractString)
     for i in odm.el
@@ -413,7 +413,7 @@ end
 """
     findstudymetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
 
-Find metadata for study with study OID soid and metadata OID moid.
+Find MeteDataVersion by StudyOID (`soid`) and MetaDataVersionOID (`moid`).
 """
 function findstudymetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     study = findstudy(odm, soid)
@@ -425,7 +425,7 @@ end
 """
     eventlist(md::AbstractODMNode; optional = false, attrs = nothing, categ = false)
 
-Return events (StudyEventDef).
+Return StudyEventDef table (DataFrame).
 
 Keywords:
 
@@ -453,7 +453,7 @@ end
 """
     formlist(el::Vector{T}; attrs = nothing,  categ = false) where T <: AbstractODMNode
 
-Return forms (FormDef).
+Return FormDef table (DataFrame).
 
 Keywords:
 
@@ -474,7 +474,7 @@ end
 """
     formlist(md::AbstractODMNode)
 
-Return forms (FormDef).
+Return FormDef table (DataFrame).
 """
 function formlist(md::AbstractODMNode; kwargs...)
     formlist(md.el; kwargs...)
@@ -484,7 +484,7 @@ end
 """
     itemgrouplist(el::Vector{T}; optional = false, attrs = nothing, categ = false) where T <: AbstractODMNode
 
-Return item groups (ItemGroupDef).
+Return ItemGroupDef table (DataFrame).
 
 Keywords:
 
@@ -509,10 +509,11 @@ end
 """
     itemgrouplist(md::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
 
-Return item groups (ItemGroupDef).
+Return ItemGroupDef table (DataFrame).
 
-If optional = true - return all optional attributes.
-attrs - list of attributes.
+If `optional` == `true` - return all optional attributes.
+
+`attrs` - get selected attributes.
 """
 function itemgrouplist(md::AbstractODMNode; kwargs...)
     itemgrouplist(md.el; kwargs...)
@@ -522,11 +523,11 @@ end
 """
     itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = false, datatype = nothing) where T <: AbstractODMNode
 
-Get list of items.
+Return ItemDef table (DataFrame).
 
 Keywords:
 
-* `optional` (true/false) - get optional attributes;
+* if `optional` == `true` - return all optional attributes;
 * `attrs` - get selected attributes;
 * `categ` - return `OID` as categorical;
 * `datatype` - select only this type of items (See DataType);
@@ -556,7 +557,7 @@ end
 """
     itemlist(md::AbstractODMNode; kwargs...)
 
-Return items (ItemDef).
+Return ItemDef table (DataFrame).
 """
 function itemlist(md::AbstractODMNode; kwargs...)
     itemlist(md.el;  kwargs...)
@@ -591,8 +592,9 @@ end
 """
     formcontent(md, oid; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
 
-Return item groups (ItemGroupDef) for concrete form (FormDef) by OID.
+Return ItemGroupDef table (DataFrame) for concrete form (FormDef) by `oid`.
 
+if `optional` == `true` - return all optional attributes.
 """
 function formcontent(md, oid; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
     inds = formcontent_(md, oid)
@@ -601,9 +603,7 @@ end
 """
     itemgroupcontent(md, oid; kwargs...)
 
-Return items (ItemDef) for concrete item group (ItemGroupDef) by OID.
-
-If optional = true - return all optional attributes.
+Return ItemDef table (DataFrame) for concrete group (ItemGroupDef) by `oid`.
 
 keywords see (itemlist)[@ref].
 """
@@ -628,7 +628,7 @@ end
 """
     itemsformcontent(md, oid; optional = false)
 
-Return items (ItemDef) for concrete item form (FormDef) by OID.
+Return ItemDef table (DataFrame) for concrete form (FormDef) by `oid`.
 
 keywords see (itemlist)[@ref].
 """
@@ -645,40 +645,26 @@ end
 """
     buildmetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
 
-Build MetaData from MetaDataVersion.
+Build MetaData from MetaDataVersion by StudyOID (`soid`) and MetaDataVersionOID (`moid`).
 """
 function buildmetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     mdat   = findstudymetadata(odm, soid, moid)
     if isnothing(mdat) error("MetaDataVersion not found (StudyOID: $(soid), MetaDataVersionOID: $(moid))") end
-    stmd   = StudyMetaData(mdat, AbstractODMNode[])
+    stmd   = StudyMetaData(mdat, ODMNode[])
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
 
-
-"""
-    buildmetadata(odm::ODMRoot, moid::AbstractString)
-
-Build MetaData from MetaDataVersion.
-"""
-function buildmetadata(odm::ODMRoot, moid::AbstractString)
-    mdv = nothing
-    for i in odm.el
-        if name(i) == :Study
-            mdv = findelement(i, :MetaDataVersion, moid)
-            isnothing(mdv) || break
-        end
-    end
-    if isnothing(mdv) return nothing end 
-    stmd   = StudyMetaData(mdv, AbstractODMNode[])
+function buildmetadata(odm::ODMRoot, mdat::AbstractODMNode)
+    if name(mdat) != :MetaDataVersion error("This is not a MetaDataVersion (nod name - $(name(mdat)))") end
+    stmd   = StudyMetaData(mdat, ODMNode[])
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
-
 """
-    codelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
+    codelisttable(cd::AbstractODMNode; lang = nothing)
 
-List of coded values.
+Return CodeList table (DataFrame).
 """
 function codelisttable(cd::AbstractODMNode; lang = nothing)
     df = DataFrame(OID = String[], Name = String[], DataType = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
@@ -706,7 +692,7 @@ end
 """
     itemcodelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
 
-List of coded values.
+Return CodeListRef table (DataFrame).
 """
 function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
     df    = DataFrame(OID = String[], CodeListOID = String[], Name = String[], DataType = String[], Type = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
@@ -750,11 +736,14 @@ end
     clinicaldatatable(cd::AbstractODMNode;
         itemgroup = nothing,
         form = nothing,
+        event = nothing,
         item::Union{Nothing, AbstractString, <: AbstractVector{<:AbstractString}} = nothing,
         categ = false, 
         addstudyid = false,
         addstudyidcol = false,
-        idlnames = nothing)
+        idlnames = nothing,
+        null = "NULL",
+        drop = [:StudyEventRepeatKey, :FormRepeatKey])
 
 Return clinical data table in long formal. `cd` should be ClinicalData.
 
@@ -764,7 +753,9 @@ Return clinical data table in long formal. `cd` should be ClinicalData.
 * `categ` - make collumns categorical;
 * `addstudyid` - add StudyOID as prefix to SubjectKey: "StudyOID_SubjectKey";
 * `addstudyidcol` - add StudyOID as collumn to dataframe;
+* `null` = "NULL" - default `NULL` values; 
 * `idlnames` - only this types of data will be collected, for example: ItemData, ItemDataInteger, ets (if `nothing`` - all will be collected). 
+* `drop` - drop columns.
 """
 function clinicaldatatable(cd::AbstractODMNode;
         itemgroup = nothing,
@@ -778,7 +769,6 @@ function clinicaldatatable(cd::AbstractODMNode;
         null = "NULL",
         drop = [:StudyEventRepeatKey, :FormRepeatKey])
     
-        
     if name(cd) != :ClinicalData error("This is not ClinicalData") end
     # For TypedData
     datatype = String
@@ -845,10 +835,10 @@ end
 """
     clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString; itemgroup = nothing)
 
-Return clinical data table in long formal.
+Return ClinicalData table in long formal.
 
-* soid - StudyOID
-* moid - MetaDataVersionOID
+* `soid` - StudyOID;
+* `moid` - MetaDataVersionOID.
 """
 function clinicaldatatable(odm::ODMRoot, soid::AbstractString, moid::AbstractString; kwargs...)
     cld  = findclinicaldata(odm, soid, moid)
@@ -859,9 +849,9 @@ end
 """
     clinicaldatatable(odm::ODMRoot, inds::AbstractVector{Int}; kwargs...)
 
-Return clinical data table in long formal.
+Return ClinicalData table in long formal.
 
-* inds -  indexes of clinicaldatalist table.
+* `inds` -  indexes of clinicaldatalist table.
 """
 function clinicaldatatable(odm::ODMRoot, inds::AbstractVector{Int}; kwargs...)
     cld  = findclinicaldata(odm)
@@ -881,9 +871,9 @@ end
 """
     clinicaldatatable(odm::ODMRoot, range::UnitRange{Int64}; kwargs...)
 
-Return clinical data table in long formal.
+Return ClinicalData table in long formal.
 
-* inds -  indexes of clinicaldatalist table.
+* `inds` -  indexes of clinicaldatalist table.
 """
 function clinicaldatatable(odm::ODMRoot, range::UnitRange{Int64}; kwargs...)
     cld  = findclinicaldata(odm)
@@ -905,7 +895,7 @@ end
 """
     clinicaldatatable(odm::ODMRoot; kwargs...)
 
-Return clinical data table in long formal.
+Return ClinicalData table in long formal.
 
 """
 function clinicaldatatable(odm::ODMRoot; kwargs...)
@@ -925,7 +915,7 @@ end
 """
     clinicaldatatable(odm::ODMRoot, soid::AbstractString; kwargs...)
 
-Return clinical data table in long formal.
+Return ClinicalData table in long formal.
 """
 function clinicaldatatable(odm::ODMRoot, soid::AbstractString; kwargs...)
     cld  = findclinicaldata(odm, soid)
@@ -944,7 +934,7 @@ end
 """
     subjectdatatable(cld::AbstractODMNode; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
 
-Subject information table
+Subject information table.
 """
 function subjectdatatable(cld::AbstractODMNode; optional = false, attrs = nothing)
     if name(cld) != :ClinicalData error("This is not ClinicalData") end
@@ -1089,14 +1079,14 @@ end
 # Modification
 ################################################################################
 """
-    deletestudy!(odm::ODMRoot, oid::AbstractString)
+    deletestudy!(odm::ODMRoot, soid::AbstractString)
 
-Delete study by OID.
+Delete Study by StudyOID (`soid`).
 """
-function deletestudy!(odm::ODMRoot, oid::AbstractString)
+function deletestudy!(odm::ODMRoot, soid::AbstractString)
     inds = Int[]
     for i in 1:length(odm.el)
-        if name(odm.el[i]) == :Study && attribute(odm.el[i], :OID) == oid
+        if name(odm.el[i]) == :Study && attribute(odm.el[i], :OID) == soid
             push!(inds, i)
         end
     end
@@ -1109,7 +1099,7 @@ end
 """
     deletestudy!(odm::ODMRoot, soid::AbstractString)
 
-Delete clinical data  by StudyOID (`soid`).
+Delete ClinicalData by StudyOID (`soid`).
 """
 function deleteclinicaldata!(odm::ODMRoot, soid::AbstractString)
     inds = Int[]
