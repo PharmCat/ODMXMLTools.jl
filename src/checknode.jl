@@ -128,7 +128,7 @@ end
 
 #Human-readable text that is appropriate for a particular language. TranslatedText elements typically occur in a series, presenting a set of alternative textual renditions for different languages.
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:TranslatedText}; integrity = false)
-    ks = Set([Symbol("xml:lang")])
+    ks = Set([:lang])
     for k in keys(node.attr)
         k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
     end

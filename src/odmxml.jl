@@ -471,7 +471,7 @@ Keywords:
 * `attrs` - get selected attributes;
 * `categ` - return `OID` as categorical;
 """
-function formlist(el::Vector{T}; attrs = nothing,  categ = false) where T <: AbstractODMNode
+function formlist(el::Vector{T}; optional = true, attrs = nothing,  categ = false) where T <: AbstractODMNode
     if isnothing(attrs)
         attrs = (:OID, :Name, :Repeating)
     end
@@ -813,8 +813,8 @@ end
 
 Return CodeList table (DataFrame).
 """
-function codelisttable(cd::AbstractODMNode; lang = nothing)
-    df = DataFrame(OID = String[], Name = String[], DataType = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
+function codelisttable(cd::AbstractODMNode; lang = "en")
+    df = DataFrame(OID = String[], Name = String[], DataType = String[], CodedValue = String[], Rank = Union{Missing, String}[], OrderNumber = Union{Missing, String}[], Text = String[])
 
     cll  = findelements(cd, :CodeList)
     clil = ODMNode[] # CodeListItem
@@ -823,14 +823,23 @@ function codelisttable(cd::AbstractODMNode; lang = nothing)
         appendelements!(clil, cl, :CodeListItem)
         for cli in clil
             dec  = findelement(cli, :Decode)
-            text = findelement(dec, :TranslatedText)
+            tn = findelements(dec, :TranslatedText)
+            text = content(first(tn))
+            if length(tn) > 1
+                for i = 2:length(tn)
+                    if attribute(tn[i], :lang) == lang 
+                        text = content(tn[i])
+                        break
+                    end
+                end
+            end
             push!(df, (attribute(cl, :OID),
             attribute(cl, :Name),
             attribute(cl, :DataType),
             attribute(cli, :CodedValue),
             attribute(cli, :Rank),
             attribute(cli, :OrderNumber),
-            content(text)))
+            text))
         end
     end
     df
@@ -839,10 +848,10 @@ end
 """
     itemcodelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
 
-Return CodeListRef table (DataFrame) from all ItemDef.
+Same as `codelisttable`, but return ItemDef.
 """
 function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
-    df    = DataFrame(OID = String[], CodeListOID = String[], Name = String[], DataType = String[], Type = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
+    df    = DataFrame(OID = String[], CodeListOID = String[], Name = String[], DataType = String[], Type = String[], CodedValue = String[], Rank = Union{Missing, String}[], OrderNumber = Union{Missing, String}[], Text = String[])
     idef  = findelements(cd, :ItemDef)
     for id in idef
         clr = findfirst(id, :CodeListRef)
@@ -852,7 +861,16 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
             clil  = findelements(cl, [:CodeListItem, :EnumeratedItem])
             for cli in clil
                     dec  = findelement(cli, :Decode)
-                        text = findelement(dec, :TranslatedText)
+                        tn = findelements(dec, :TranslatedText)
+                        text = content(first(tn))
+                        if length(tn) > 1
+                            for i = 2:length(tn)
+                                if attribute(tn[i], :lang) == lang 
+                                    text = content(tn[i])
+                                    break
+                                end
+                            end
+                        end
                         push!(df, (attribute(id, :OID),
                         cla,
                         attribute(cl, :Name),
@@ -861,7 +879,7 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
                         attribute(cli, :CodedValue),
                         attribute(cli, :Rank),
                         attribute(cli, :OrderNumber),
-                        content(text)))
+                        text))
             end
         end
     end

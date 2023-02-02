@@ -136,6 +136,22 @@ using Test
 
     @test_nowarn ODMXMLTools.subjectdatatable(odm; attrs = [:SubjectKey, :StudySubjectID])
 
+
+    ############
+
+    clt = ODMXMLTools.codelisttable(mdb; lang = "en")
+    @test clt[!, 7] == ["Male"
+    "Female"
+    "Asian"
+    "Caucasian"]
+
+    iclt = ODMXMLTools.itemcodelisttable(mdb; lang = "en")
+    @test iclt[!, 9] == ["Male"
+    "Female"
+    "Asian"
+    "Caucasian"]
+    ############
+
     @test_nowarn ODMXMLTools.studyinfo(odm; io = io)
     @test_nowarn ODMXMLTools.studyinfo(odm, "ST_1_1";  io = io)
 
