@@ -808,6 +808,51 @@ function buildmetadata(odm::ODMRoot, mdat::AbstractODMNode)
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
+#########################################################################
+#########################################################################
+function itemdesqu_(md::AbstractODMNode, nname::Symbol; lang)
+    it = findelements(md, :ItemDef)
+    df = DataFrame((a => Union{Missing, String}[] for a in lang)...)
+    insertcols!(df, 1, :OID => String[]) 
+    for i in it
+        row = [attribute(i, :OID)]
+        d = findelement(i, nname)
+        if !isnothing(d)
+            tn = findelements(d, :TranslatedText)
+            for l in lang
+                destext = ""
+                for t in tn
+                    tattr = attribute(t, :lang)
+                    if !ismissing(tattr) && tattr == l destext = content(t) end
+                end
+                push!(row, destext)
+            end
+            push!(df, row)
+        end
+    end
+    df
+end
+
+function itemdescription(md::AbstractODMNode; lang = ["en"])
+    itemdesqu_(md::AbstractODMNode, :Description; lang = lang)
+end
+
+function itemquestion(md::AbstractODMNode; lang = ["en"])
+    itemdesqu_(md::AbstractODMNode, :Question; lang = lang)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
 """
     codelisttable(cd::AbstractODMNode; lang = nothing)
 
