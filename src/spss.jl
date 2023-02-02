@@ -53,7 +53,7 @@ SPSS command to set variable labels.
 
 """
 function spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name)
-    df = itemformcontent_(mdb, form; optional = true)
+    df = itemformdefcontent_(mdb, form; optional = true)
     v  = Vector{Pair}(undef, length(df))
     for i = 1:size(df, 1)
         v[i] = attribute(df[i], variable) => attribute(df[i], labels)
@@ -81,7 +81,7 @@ SPSS command to set value labels.
 `variable` - varable names attribute, `OID` by default.
 """
 function spss_form_value_labels(mdb, form; variable = :OID)
-    items = itemformcontent_(mdb, form)
+    items = itemformdefcontent_(mdb, form)
     v  = Vector{Pair{String, Vector{Pair}}}(undef, 0)
     for i = 1:length(items)
         cid = findelement(items[i], :CodeListRef)

@@ -51,11 +51,11 @@ using Test
     "Scheduled"]
     # Optional
     evl = ODMXMLTools.eventlist(mdb; optional = true, categ = true)
-    @test collect(evl[1, :]) == ["SE_VIZIT1"
+    @test collect(evl[1, 1:4]) == ["SE_VIZIT1"
     "Vizit 1"
     "No"
-    "Scheduled"
-    ""]
+    "Scheduled"]
+    @test ismissing(evl[1, 5])
 
     mdb = ODMXMLTools.buildmetadata(odm, "ST_2_1", "mdv_2")
 
@@ -73,7 +73,26 @@ using Test
     itl =  ODMXMLTools.itemlist(mdb; optional = true)
     itl =  ODMXMLTools.itemlist(mdb.el)
 
+    prc = ODMXMLTools.protocolcontent(mdb; optional = true, categ = true)
 
+    ec = ODMXMLTools.eventcontent(mdb; optional = true, categ = true)
+    @test ec[!, 2] ==  ODMXMLTools.eventcontent(mdb, "SE_VIZIT1"; optional = true, categ = true)[!, 2]
+
+    fc = ODMXMLTools.formcontent(mdb; optional = true, categ = true)
+    @test fc[!, 2] == ["DE_IG_1"
+    "AN_IG_2"
+    "VIT_IG_1"]
+    fc = ODMXMLTools.formcontent(mdb, "FORM_VD_1")
+    @test fc[1, :ItemGroupOID] == "VIT_IG_1"
+
+    igc = ODMXMLTools.itemgroupcontent(mdb, "VIT_IG_1")
+    @test igc[:, 2] == ["I_1"
+    "I_2"
+    "I_3"]
+
+    ifc =  ODMXMLTools.itemformlist(mdb, "FORM_VD_1"; optional = true)
+
+    
     st1 =  ODMXMLTools.findstudy(odm, "ST_1_1")
     @test_nowarn show(io, st1)
 
@@ -91,13 +110,6 @@ using Test
     mdb = ODMXMLTools.buildmetadata(odm, "ST_2_1", "mdv_2")
     @test_nowarn show(io, mdb)
 
-    igc = ODMXMLTools.itemgroupcontent(mdb, "VIT_IG_1")
-    @test igc[:, 1] == ["I_1"
-    "I_2"
-    "I_3"]
-
-    fc = ODMXMLTools.formcontent(mdb, "FORM_VD_1")
-    ifc =  ODMXMLTools.itemformcontent(mdb, "FORM_VD_1"; optional = true)
     igd =  ODMXMLTools.findelement(mdb, :ItemGroupDef, "AN_IG_2")
     @test ODMXMLTools.name(igd) == :ItemGroupDef
 

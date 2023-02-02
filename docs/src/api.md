@@ -73,6 +73,11 @@ ODMXMLTools.itemgrouplist
 ODMXMLTools.itemlist
 ```
 
+### ODMXMLTools.itemformlist
+```@docs
+ODMXMLTools.itemformlist
+```
+
 ## Find node
 
 ### ODMXMLTools.findelement
@@ -102,6 +107,16 @@ ODMXMLTools.findclinicaldata
 
 ## Content 
 
+### ODMXMLTools.protocolcontent
+```@docs
+ODMXMLTools.protocolcontent
+```
+
+### ODMXMLTools.eventcontent
+```@docs
+ODMXMLTools.eventcontent
+```
+
 ### ODMXMLTools.formcontent
 ```@docs
 ODMXMLTools.formcontent
@@ -110,11 +125,6 @@ ODMXMLTools.formcontent
 ### ODMXMLTools.itemgroupcontent
 ```@docs
 ODMXMLTools.itemgroupcontent
-```
-
-### ODMXMLTools.itemformcontent
-```@docs
-ODMXMLTools.itemformcontent
 ```
 
 ## Delete 

@@ -557,7 +557,8 @@ function checkdatavalues(odm::ODMRoot)
                                                 else
                                                     val = content(i)
                                                 end
-                                                if attribute(i, :IsNull) == "Yes" && val != ""
+                                                ain = attribute(i, :IsNull)
+                                                if !ismissing(ain) && ain == "Yes" && val != ""
                                                     pushlog!(log, :WARN, s, e, f, g, i, "Attribute `IsNull` set `Yes`, but value not empty")
                                                 end
                                                 if attribute(i, :ItemOID) ∉ keys(idd)
