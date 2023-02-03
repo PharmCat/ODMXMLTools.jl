@@ -1,4 +1,43 @@
 
+function checkattrs!(log, node, attrs, attrsref)
+    for r in attrsref
+        if !(r[1] in attrs) && r[2] == :! push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Attribute $(r[1]) not found.") end
+    end
+    for a in attrs
+        found = false
+        for r in attrsref
+            if a == r[1] found = true end
+        end
+        if !found push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected attribute: $(a)") end
+    end
+end
+
+function checkchlds!(log, node, chlds, chldsref::AbstractVector)
+    for r in chldsref
+        cnt = countelements(node, r[1])
+        if r[2] == :! && cnt != 1 
+            push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt != 1.") 
+        elseif r[2] == :? && cnt > 1  
+            push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt > 1.") 
+        elseif r[2] == :+ && cnt == 0
+            push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt < 1.")  
+        end 
+    end
+    for c in chlds
+        found = false
+        for r in chldsref
+            if name(c) == r[1] found = true end
+        end
+        if !found push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected child node: $(name(c))") end
+    end
+end
+function checkchlds!(log, node, chlds, chldsref::String)
+    if length(chlds) > 0
+        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected child node, $chldsref expected.") 
+    end
+end
+
+
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType; integrity = false)
 end
@@ -161,12 +200,18 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Include}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Protocol}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Description}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyEventRef}; integrity = false)

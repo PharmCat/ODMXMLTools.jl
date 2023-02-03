@@ -121,12 +121,19 @@ end
 ################################################################################
 # SUPPORT FUNCTIONS
 ################################################################################
-function attribute(n::AbstractODMNode, attr::Symbol)
-    attrf = getfield(n, :attr)
-    if haskey(attrf, attr) return attrf[attr] else return missing end
+function hasattribute(n::AbstractODMNode, attr::Symbol)
+    haskey(getfield(n, :attr), attr)
 end
-function attribute(n::AbstractODMNode, attr::String)
-    attribute(n, Symbol(attr))
+function attribute(n::AbstractODMNode, attr::Symbol, str::Bool = false)
+    attrf = getfield(n, :attr)
+    if haskey(attrf, attr) 
+        return attrf[attr] 
+    else 
+        if str return "" else return missing end 
+    end
+end
+function attribute(n::AbstractODMNode, attr::String, str::Bool = false)
+    attribute(n, Symbol(attr), str)
 end
 function attributes(n::AbstractODMNode, attrs)
     broadcast(x-> attribute(n, x), attrs)
@@ -137,6 +144,7 @@ function addattributes!(a, n::AbstractODMNode, attrs)
     end
     a
 end
+
 
 function name(n::ODMRoot)
     :ODM
@@ -300,13 +308,7 @@ Base.findall(n::AbstractODMNode, args...) = findelements(n, args...)
 Count elements by node name `nname`.
 """
 function countelements(n::AbstractODMNode, nname::Symbol)
-    inds = 0
-    for i in n.el
-        if name(n) == nname
-            inds += 1
-        end
-    end
-    inds
+    count(x-> nname == name(x), n.el)
 end
 ################################################################################
 # SEARCH FUNCTIONS (find*)

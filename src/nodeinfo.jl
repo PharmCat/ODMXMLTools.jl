@@ -1,10 +1,14 @@
 struct NodeInfo
     val::Symbol
-    parent::Symbol
+    parent::Union{Symbol, Vector{Symbol}}
     attrs::Vector
     body::Union{Vector, String}
 end
-
+#=
+struct NodeXOR
+    val::Vector
+end
+=#
 function attps(s::Symbol)
     if s == :!
         return "mandatory"
@@ -40,6 +44,8 @@ function Base.show(io::IO, ni::NodeInfo)
     print(io, "Body:")
     if length(ni.body) == 0
         print(io, "\n    NONE")
+    elseif isa(ni.body, String)
+        print(io, "\n    $(ni.body)")
     else
         for i in ni.body
             print(io, "\n    $(i[1]): $(bodyps(i[2]))")
@@ -50,13 +56,77 @@ end
 const NODEINFO = Dict{Symbol, NodeInfo}(
 :Study => NodeInfo(:Study, 
     :ODM,
-    [(:OID, :!, "OID")],
+    [(:OID, :!, "oid")],
     [(:GlobalVariables, :!), (:BasicDefinitions, :?), (:MetaDataVersion, :*)]
     ),
 :GlobalVariables => NodeInfo(:GlobalVariables, 
     :Study,
     [],
     [(:StudyName, :!), (:StudyDescription, :!), (:ProtocolName, :!)]
-    )
-
+    ),
+:StudyName => NodeInfo(:StudyName, 
+    :GlobalVariables,
+    [],
+    "name"
+    ),
+:StudyDescription => NodeInfo(:StudyDescription, 
+    :GlobalVariables,
+    [],
+    "text"
+    ),
+:ProtocolName => NodeInfo(:ProtocolName, 
+    :GlobalVariables,
+    [],
+    "name"
+    ),
+:BasicDefinitions => NodeInfo(:BasicDefinitions, 
+    :Study,
+    [],
+    [(:MeasurementUnit, :*)]
+    ),
+:MeasurementUnit => NodeInfo(:MeasurementUnit, 
+    :BasicDefinitions,
+    [(:OID, :!, "oid"), (:Name, :!, "text")],
+    [(:Symbol, :!), (:Alias, :*)]
+    ),
+:Symbol => NodeInfo(:Symbol, 
+    :MeasurementUnit,
+    [],
+    [(:TranslatedText, :+)]
+    ),
+:TranslatedText => NodeInfo(:TranslatedText, 
+    [:Decode, :ErrorMessage, :Question, :Symbol, :Description],
+    [(:lang, :?, "languageTag")],
+    "text"
+    ),
+:MetaDataVersion => NodeInfo(:MetaDataVersion, 
+    :Study,
+    [(:OID, :!, "oid"), (:Name, :!, "name"), (:Description, :?, "text")],
+    [(:Include, :?), (:Protocol, :?), (:StudyEventDef, :*), (:FormDef, :*), (:ItemGroupDef, :*), (:ItemDef, :*), (:CodeList, :*), (:Presentation, :*), (:ConditionDef, :*), (:MethodDef, :*)]
+    ),
+:Include => NodeInfo(:Include, 
+    :MetaDataVersion,
+    [(:StudyOID, :!, "oidref"), (:MetaDataVersionOID, :!, "oidref")],
+    []
+    ),
+:Protocol => NodeInfo(:Protocol, 
+    :MetaDataVersion,
+    [],
+    [(:Description, :?), (:StudyEventRef, :*), (:Alias, :*)]
+    ),
+:Description => NodeInfo(:Description, 
+    [:Protocol, :StudyEventDef, :FormDef, :ItemGroupDef, :ItemDef, :ConditionDef, :MethodDef],
+    [],
+    [(:TranslatedText, :+)]
+    ),
+:StudyEventRef => NodeInfo(:StudyEventRef, 
+    :Protocol,
+    [(:StudyEventOID, :!, "oidref"), (:OrderNumber, :?, "integer"), (:Mandatory, :!, "Yes|No"), (:CollectionExceptionConditionOID, :?, "Yes|No")],
+    []
+    ),
+:StudyEventDef => NodeInfo(:StudyEventDef, 
+    :MetaDataVersion,
+    [(:OID, :!, "oid"), (:Name, :!, "name"), (:Repeating, :!, "Yes|No"), (:Type, :!, "Scheduled|Unscheduled|Common"), (:Category, :?, "text")],
+    [(:Description, :?), (:FormRef, :*), (:Alias, :*)]
+    ),
 )
