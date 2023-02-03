@@ -142,6 +142,13 @@
 		<MetaDataVersion OID="mdv_2" Name="Version_v2">
 			<Include StudyOID="ST_2_1" MetaDataVersionOID="mdv_1"/>
 			<ItemDef OID="DE_1" Name="Sex" DataType="integer" Length="1" SASFieldName="DE_1" Comment="Comments">
+				<Description>
+              		<TranslatedText>ItemDef 1 description </TranslatedText>
+          		</Description>
+				<Question>
+					<TranslatedText>ItemDef 1 question </TranslatedText>
+				</Question>
+				<ExternalQuestion/>
 				<CodeListRef CodeListOID="CL_2"/>
 			</ItemDef>
 			<CodeList OID="CL_2" Name="Sex codelist" DataType="integer" SASFormatName="CL_2">

@@ -127,6 +127,23 @@ ODMXMLTools.formcontent
 ODMXMLTools.itemgroupcontent
 ```
 
+## Description and Question
+
+### ODMXMLTools.itemdescription
+```@docs
+ODMXMLTools.itemdescription
+```
+
+### ODMXMLTools.itemquestion
+```@docs
+ODMXMLTools.itemquestion
+```
+
+### ODMXMLTools.nodedesq
+```@docs
+ODMXMLTools.nodedesq
+```
+
 ## Delete 
 
 ### ODMXMLTools.deletestudy!

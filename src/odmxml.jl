@@ -810,9 +810,13 @@ function buildmetadata(odm::ODMRoot, mdat::AbstractODMNode)
 end
 #########################################################################
 #########################################################################
-function itemdesqu_(md::AbstractODMNode, nname::Symbol; lang)
-    it = findelements(md, :ItemDef)
-    df = DataFrame((a => Union{Missing, String}[] for a in lang)...)
+function nodedesqu_(md::AbstractODMNode, tnode::Symbol, nname::Symbol; lang)
+    tnode in [:Protocol, :StudyEventDef, :FormDef, :ItemGroupDef, :ItemDef, :ConditionDef, :MethodDef] || error("Wrong node name")
+    nname in [:Description, :Question] || error("nname can be only :Description or :Question")
+    if nname == :Question && tnode != :ItemDef error(":Question can be applied only to :ItemDef") end
+
+    it = findelements(md, tnode)
+    df = DataFrame(("lang_"*a => Union{Missing, String}[] for a in lang)...)
     insertcols!(df, 1, :OID => String[]) 
     for i in it
         row = [attribute(i, :OID)]
@@ -822,8 +826,9 @@ function itemdesqu_(md::AbstractODMNode, nname::Symbol; lang)
             for l in lang
                 destext = ""
                 for t in tn
-                    tattr = attribute(t, :lang)
-                    if !ismissing(tattr) && tattr == l destext = content(t) end
+                    tattr = attribute(t, :lang) 
+                    tattr = ismissing(tattr) ? "" : tattr
+                    if tattr == l destext = content(t) end
                 end
                 push!(row, destext)
             end
@@ -833,12 +838,33 @@ function itemdesqu_(md::AbstractODMNode, nname::Symbol; lang)
     df
 end
 
-function itemdescription(md::AbstractODMNode; lang = ["en"])
-    itemdesqu_(md::AbstractODMNode, :Description; lang = lang)
+"""
+    nodedesq(md::AbstractODMNode, tnode::Symbol, nname::Symbol; lang = ["en"])
+
+Get desctriptions or questions for node `tnode`.
+    
+`nname` can be only `:Description` or `:Question`.
+"""
+function nodedesq(md::AbstractODMNode, tnode::Symbol, nname::Symbol; lang = ["en"])
+    nodedesqu_(md, tnode, nname; lang = lang)
 end
 
+"""
+    itemdescription(md::AbstractODMNode; lang = ["en"])
+
+ItemDef descriptions.
+"""
+function itemdescription(md::AbstractODMNode; lang = ["en"])
+    nodedesqu_(md::AbstractODMNode, :ItemDef, :Description; lang = lang)
+end
+
+"""
+    itemquestion(md::AbstractODMNode; lang = ["en"])
+
+ItemDef questions.
+"""
 function itemquestion(md::AbstractODMNode; lang = ["en"])
-    itemdesqu_(md::AbstractODMNode, :Question; lang = lang)
+    nodedesqu_(md::AbstractODMNode, :ItemDef, :Question; lang = lang)
 end
 
 

@@ -152,13 +152,15 @@ using Test
     "Caucasian"]
     ############
 
-    @test_nowarn ODMXMLTools.itemdescription(mdb; lang = ["en", "ru"])
+    @test_nowarn ODMXMLTools.itemdescription(mdb; lang = ["", "en", "ru"])
 
-    @test_nowarn ODMXMLTools.itemquestion(mdb; lang = ["en", "ru"])
+    @test_nowarn ODMXMLTools.itemquestion(mdb; lang = ["", "en", "ru"])
+
+    @test_nowarn ODMXMLTools.nodedesq(mdb, :FormDef, :Description; lang = ["", "en", "ru"])
+
 
     @test_nowarn ODMXMLTools.studyinfo(odm; io = io)
     @test_nowarn ODMXMLTools.studyinfo(odm, "ST_1_1";  io = io)
-
 
     # CHECK
     @test_nowarn ODMXMLTools.validateodm(odm)
