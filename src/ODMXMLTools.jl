@@ -7,25 +7,37 @@ module ODMXMLTools
     import Base: show, findfirst, findall
 
     export importxml,
-    metadatalist,
     findclinicaldata,
     findstudy,
     findstudymetadata,
     findelement,
     findallelements,
+
     buildmetadata,
-	clinicaldatalist,
+
+	metadatalist,
     eventlist,
     formlist,
     itemgrouplist,
     itemlist,
+	clinicaldatalist,
+
+	protocolcontent,
+	eventcontent,
 	formcontent,
-	itemformcontent,
     itemgroupcontent,
+
+	itemformcontent,
+
 	clinicaldatatable,
 	codelisttable,
 	itemcodelisttable,
 	subjectdatatable,
+
+	itemdescription,
+	itemquestion,
+	nodedesq,
+
     validateodm,
 	checkdatavalues,
 	children
@@ -156,8 +168,7 @@ module ODMXMLTools
 	:Symbol
 	:TranslatedText
 	:User
-	:UserRef
-	Symbol("ds:Signature")])
+	:UserRef])
 
 
     const ODMATTRNAMESPACE = Set([:AddressAnnotationID
@@ -242,7 +253,7 @@ module ODMXMLTools
 	:UserType
 	:Value
 	:Version
-	Symbol("xml:lang")
+	:lang
 	:xmlns])
 
     const ITEMDATATYPE = Set([:ItemDataAny

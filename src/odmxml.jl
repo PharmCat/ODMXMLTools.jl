@@ -123,13 +123,19 @@ end
 ################################################################################
 function attribute(n::AbstractODMNode, attr::Symbol)
     attrf = getfield(n, :attr)
-    if haskey(attrf, attr) return attrf[attr] else return "" end
+    if haskey(attrf, attr) return attrf[attr] else return missing end
 end
 function attribute(n::AbstractODMNode, attr::String)
     attribute(n, Symbol(attr))
 end
 function attributes(n::AbstractODMNode, attrs)
     broadcast(x-> attribute(n, x), attrs)
+end
+function addattributes!(a, n::AbstractODMNode, attrs)
+    for i in attrs
+        push!(a, attribute(n, i))
+    end
+    a
 end
 
 function name(n::ODMRoot)
@@ -141,6 +147,10 @@ end
 
 isMetaDataVersion(node::AbstractODMNode) = name(node) == :MetaDataVersion
 isStudy(node::AbstractODMNode) = name(node) == :Study
+isStudyEventDef(node::AbstractODMNode) = name(node) == :StudyEventDef
+isStudyEventRef(node::AbstractODMNode) = name(node) == :StudyEventRef
+isFormDef(node::AbstractODMNode) = name(node) == :FormDef
+isFormRef(node::AbstractODMNode) = name(node) == :FormRef
 
 isClinicalData(node::AbstractODMNode) = name(node) == :ClinicalData
 isSubjectData(node::AbstractODMNode) = name(node) == :SubjectData
@@ -179,7 +189,8 @@ function content(n::AbstractODMNode)
 end
 
 function getitemdatavalue(n::AbstractODMNode, null)
-    if attribute(n, :IsNull) == "Yes" return null end
+    ina = attribute(n, :IsNull)
+    if !ismissing(ina) && ina == "Yes" return null end
     if isItemData(n)
         return attribute(n, :Value) 
     elseif isItemDataType(n) 
@@ -276,10 +287,10 @@ end
 """
     findelements(n::AbstractODMNode, nnames::Vector{Symbol})
 
-Find all elements by node name `nname` (list).
+Find all elements by node name `nnames` (list).
 """
 function findelements(n::AbstractODMNode, nnames::Vector{Symbol})
-    findelements_(n.el, nname)
+    findelements_(n.el, nnames)
 end
 
 Base.findall(n::AbstractODMNode, args...) = findelements(n, args...)
@@ -460,7 +471,7 @@ Keywords:
 * `attrs` - get selected attributes;
 * `categ` - return `OID` as categorical;
 """
-function formlist(el::Vector{T}; attrs = nothing,  categ = false) where T <: AbstractODMNode
+function formlist(el::Vector{T}; optional = true, attrs = nothing,  categ = false) where T <: AbstractODMNode
     if isnothing(attrs)
         attrs = (:OID, :Name, :Repeating)
     end
@@ -540,7 +551,7 @@ function itemlist(el::Vector{T}; optional = false, attrs = nothing, categ = fals
             attrs = (:OID, :Name, :DataType)
         end
     end
-    df = DataFrame(Matrix{Union{Missing, String}}(undef, 0, length(attrs)), t_collect(attrs))
+    df = DataFrame((a => Union{Missing, String}[] for a in attrs)...)
     for i in el
         if name(i) == :ItemDef
             if !isnothing(datatype)
@@ -565,6 +576,51 @@ end
 ################################################################################
 # CONTENT
 ################################################################################
+function eventcontent_(sed; optional = false, attrs = nothing, categ = false)
+    if isnothing(attrs)
+        if optional
+            attrs = (:FormOID, :OrderNumber, :Mandatory, :CollectionExceptionConditionOID)
+        else
+            attrs = (:FormOID, :Mandatory)
+        end
+    end
+    df = DataFrame((a => Union{Missing, String}[] for a in attrs)...)
+    insertcols!(df, 1, :StudyEventOID => String[]) 
+    for s in sed
+        fr  = findelements(s, :FormRef)
+        for f in fr
+            push!(df, addattributes!(Union{Missing, String}[attribute(s, :OID)], f, attrs))
+        end
+    end
+    if categ && :FormOID in attrs
+        transform!(df, :FormOID => categorical, renamecols=false)
+    end
+    df
+end
+
+function formcontent_(sed; optional = false, attrs = nothing, categ = false)
+    if isnothing(attrs)
+        if optional
+            attrs = (:ItemGroupOID, :OrderNumber, :Mandatory, :CollectionExceptionConditionOID)
+        else
+            attrs = (:ItemGroupOID, :Mandatory)
+        end
+    end
+    df = DataFrame((a => Union{Missing, String}[] for a in attrs)...)
+    insertcols!(df, 1, :FormOID => String[]) 
+    for s in sed
+        fr  = findelements(s, :ItemGroupRef)
+        for f in fr
+            push!(df, addattributes!(Union{Missing, String}[attribute(s, :OID)], f, attrs))
+        end
+    end
+    if categ && :ItemGroupOID in attrs
+        transform!(df, :ItemGroupOID => categorical, renamecols=false)
+    end
+    df
+end
+
+#=
 function formcontent_(md, oid)
     ig   = findelement(md, :FormDef, oid)
     inds = ODMNode[]
@@ -576,8 +632,123 @@ function formcontent_(md, oid)
     end
     inds
 end
+=#
+function itemgroupcontent_(sed; optional = false, attrs = nothing, categ = false)
+    if isnothing(attrs)
+        if optional
+            attrs = (:ItemOID, :OrderNumber, :Mandatory, :KeySequence, :MethodOID, :Role, :RoleCodeListOID, :CollectionExceptionConditionOID)
+        else
+            attrs = (:ItemOID, :Mandatory)
+        end
+    end
+    df = DataFrame((a => Union{Missing, String}[] for a in attrs)...)
+    insertcols!(df, 1, :ItemGroupOID => String[]) 
+    for s in sed
+        fr  = findelements(s, :ItemRef)
+        for f in fr
+            push!(df, addattributes!(Union{Missing, String}[attribute(s, :OID)], f, attrs))
+        end
+    end
+    if categ && :ItemOID in attrs
+        transform!(df, :ItemOID => categorical, renamecols=false)
+    end
+    df
+end
 
-function itemgroupcontent_(md, oid)
+"""
+    function protocolcontent(md; optional = false, attrs = nothing, categ = false)
+
+"""
+function protocolcontent(md; optional = false, attrs = nothing, categ = false)
+    pr   = findelement(md, :Protocol)
+    ser  = findelements(pr, :StudyEventRef)
+    if isnothing(attrs)
+        if optional
+            attrs = (:StudyEventOID, :OrderNumber, :Mandatory, :CollectionExceptionConditionOID)
+        else
+            attrs = (:StudyEventOID, :Mandatory)
+        end
+    end
+    df = DataFrame((a => Union{Missing, String}[] for a in attrs)...)
+    for i in ser
+        push!(df, attributes(i, attrs))
+    end
+    if categ && :StudyEventOID in attrs
+        transform!(df, :StudyEventOID => categorical, renamecols=false)
+    end
+    df
+end
+
+"""
+    eventcontent(md; kwargs...)
+
+Return FormRef table (DataFrame) for concrete form (StudyEventDef).
+
+if `optional` == `true` - return all optional attributes.
+"""
+function eventcontent(md; kwargs...)
+    sed   = findelements(md, :StudyEventDef)
+    eventcontent_(sed; kwargs...)
+end
+"""
+    eventcontent(md, oid; kwargs...)    
+
+Return FormRef table (DataFrame) for concrete form (StudyEventDef) by `oid`.
+
+if `optional` == `true` - return all optional attributes.
+"""
+function eventcontent(md, oid; kwargs...)
+    sed   = [findelement(md, :StudyEventDef, oid)]
+    eventcontent_(sed; kwargs...)
+end
+
+"""
+    formcontent(md; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+
+Return ItemGroupRef table (DataFrame) for concrete form (FormDef).
+
+if `optional` == `true` - return all optional attributes.
+"""
+function formcontent(md; kwargs...)
+    sed   = findelements(md, :FormDef)
+    formcontent_(sed; kwargs...)
+end
+"""
+    formcontent(md, oid; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
+
+Return ItemGroupRef table (DataFrame) for concrete form (FormDef) by `oid`.
+
+if `optional` == `true` - return all optional attributes.
+"""
+function formcontent(md, oid; kwargs...)
+    sed   = [findelement(md, :FormDef, oid)]
+    formcontent_(sed; kwargs...)
+end
+
+"""
+    itemgroupcontent(md; kwargs...)
+
+Return ItemRef table (DataFrame) for concrete group (ItemGroupDef).
+
+"""
+function itemgroupcontent(md; kwargs...)
+    sed   = findelements(md, :ItemGroupDef)
+    itemgroupcontent_(sed; kwargs...)
+end
+"""
+    itemgroupcontent(md, oid; kwargs...)
+
+Return ItemRef table (DataFrame) for concrete group (ItemGroupDef) by `oid`.
+
+"""
+function itemgroupcontent(md, oid; kwargs...)
+    sed   = [findelement(md, :ItemGroupDef, oid)]
+    itemgroupcontent_(sed; kwargs...)
+end
+###############################################################################
+# Item form content
+###############################################################################
+function itemgroupdefcontent_(md, oid)
     ig   = findelement(md, :ItemGroupDef, oid)
     inds = ODMNode[]
     for i in ig.el
@@ -588,52 +759,28 @@ function itemgroupcontent_(md, oid)
     end
     inds
 end
-
-"""
-    formcontent(md, oid; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
-
-Return ItemGroupDef table (DataFrame) for concrete form (FormDef) by `oid`.
-
-if `optional` == `true` - return all optional attributes.
-"""
-function formcontent(md, oid; optional = false, attrs::Union{AbstractVector, Nothing} = nothing)
-    inds = formcontent_(md, oid)
-    itemgrouplist(inds; optional = optional, attrs = attrs)
-end
-"""
-    itemgroupcontent(md, oid; kwargs...)
-
-Return ItemDef table (DataFrame) for concrete group (ItemGroupDef) by `oid`.
-
-keywords see (itemlist)[@ref].
-"""
-function itemgroupcontent(md, oid; kwargs...)
-    inds = itemgroupcontent_(md, oid)
-    itemlist(inds; kwargs...)
-end
-###############################################################################
-# Item form content
-###############################################################################
-function itemformcontent_(md, oid; kwargs...)
+# using by spss spss_form_variable_labels
+function itemformdefcontent_(md, oid; kwargs...)
     inds   = ODMNode[]
     frm    = findelement(md, :FormDef, oid)
     if isnothing(frm) return inds end
     iginds = findelements(frm, :ItemGroupRef)
     for i in iginds
         igoid = attribute(i, :ItemGroupOID)
-        append!(inds, itemgroupcontent_(md, igoid))
+        append!(inds, itemgroupdefcontent_(md, igoid))
     end
     inds
 end
+
 """
-    itemsformcontent(md, oid; optional = false)
+    itemsformlist(md, oid; optional = false)
 
 Return ItemDef table (DataFrame) for concrete form (FormDef) by `oid`.
 
 keywords see (itemlist)[@ref].
 """
-function itemformcontent(md, oid; kwargs...)
-    inds = itemformcontent_(md, oid; kwargs...)
+function itemformlist(md, oid; kwargs...)
+    inds = itemformdefcontent_(md, oid; kwargs...)
     itemlist(inds; kwargs...)
 end
 ################################################################################
@@ -661,13 +808,84 @@ function buildmetadata(odm::ODMRoot, mdat::AbstractODMNode)
     fillstmd_(stmd.el, stmd.metadata, odm)
     stmd
 end
+#########################################################################
+#########################################################################
+function nodedesqu_(md::AbstractODMNode, tnode::Symbol, nname::Symbol; lang)
+    tnode in [:Protocol, :StudyEventDef, :FormDef, :ItemGroupDef, :ItemDef, :ConditionDef, :MethodDef] || error("Wrong node name")
+    nname in [:Description, :Question] || error("nname can be only :Description or :Question")
+    if nname == :Question && tnode != :ItemDef error(":Question can be applied only to :ItemDef") end
+
+    it = findelements(md, tnode)
+    df = DataFrame(("lang_"*a => Union{Missing, String}[] for a in lang)...)
+    insertcols!(df, 1, :OID => String[]) 
+    for i in it
+        row = [attribute(i, :OID)]
+        d = findelement(i, nname)
+        if !isnothing(d)
+            tn = findelements(d, :TranslatedText)
+            for l in lang
+                destext = ""
+                for t in tn
+                    tattr = attribute(t, :lang) 
+                    tattr = ismissing(tattr) ? "" : tattr
+                    if tattr == l destext = content(t) end
+                end
+                push!(row, destext)
+            end
+            push!(df, row)
+        end
+    end
+    df
+end
+
+"""
+    nodedesq(md::AbstractODMNode, tnode::Symbol, nname::Symbol; lang = ["en"])
+
+Get desctriptions or questions for node `tnode`.
+    
+`nname` can be only `:Description` or `:Question`.
+"""
+function nodedesq(md::AbstractODMNode, tnode::Symbol, nname::Symbol; lang = ["en"])
+    nodedesqu_(md, tnode, nname; lang = lang)
+end
+
+"""
+    itemdescription(md::AbstractODMNode; lang = ["en"])
+
+ItemDef descriptions.
+"""
+function itemdescription(md::AbstractODMNode; lang = ["en"])
+    nodedesqu_(md::AbstractODMNode, :ItemDef, :Description; lang = lang)
+end
+
+"""
+    itemquestion(md::AbstractODMNode; lang = ["en"])
+
+ItemDef questions.
+"""
+function itemquestion(md::AbstractODMNode; lang = ["en"])
+    nodedesqu_(md::AbstractODMNode, :ItemDef, :Question; lang = lang)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
 """
     codelisttable(cd::AbstractODMNode; lang = nothing)
 
 Return CodeList table (DataFrame).
 """
-function codelisttable(cd::AbstractODMNode; lang = nothing)
-    df = DataFrame(OID = String[], Name = String[], DataType = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
+function codelisttable(cd::AbstractODMNode; lang = "en")
+    df = DataFrame(OID = String[], Name = String[], DataType = String[], CodedValue = String[], Rank = Union{Missing, String}[], OrderNumber = Union{Missing, String}[], Text = String[])
 
     cll  = findelements(cd, :CodeList)
     clil = ODMNode[] # CodeListItem
@@ -676,14 +894,23 @@ function codelisttable(cd::AbstractODMNode; lang = nothing)
         appendelements!(clil, cl, :CodeListItem)
         for cli in clil
             dec  = findelement(cli, :Decode)
-            text = findelement(dec, :TranslatedText)
+            tn = findelements(dec, :TranslatedText)
+            text = content(first(tn))
+            if length(tn) > 1
+                for i = 2:length(tn)
+                    if attribute(tn[i], :lang) == lang 
+                        text = content(tn[i])
+                        break
+                    end
+                end
+            end
             push!(df, (attribute(cl, :OID),
             attribute(cl, :Name),
             attribute(cl, :DataType),
             attribute(cli, :CodedValue),
             attribute(cli, :Rank),
             attribute(cli, :OrderNumber),
-            content(text)))
+            text))
         end
     end
     df
@@ -692,10 +919,10 @@ end
 """
     itemcodelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
 
-Return CodeListRef table (DataFrame).
+Same as `codelisttable`, but return ItemDef.
 """
 function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
-    df    = DataFrame(OID = String[], CodeListOID = String[], Name = String[], DataType = String[], Type = String[], CodedValue = String[], Rank = String[], OrderNumber = String[], Text = String[])
+    df    = DataFrame(OID = String[], CodeListOID = String[], Name = String[], DataType = String[], Type = String[], CodedValue = String[], Rank = Union{Missing, String}[], OrderNumber = Union{Missing, String}[], Text = String[])
     idef  = findelements(cd, :ItemDef)
     for id in idef
         clr = findfirst(id, :CodeListRef)
@@ -705,7 +932,16 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
             clil  = findelements(cl, [:CodeListItem, :EnumeratedItem])
             for cli in clil
                     dec  = findelement(cli, :Decode)
-                        text = findelement(dec, :TranslatedText)
+                        tn = findelements(dec, :TranslatedText)
+                        text = content(first(tn))
+                        if length(tn) > 1
+                            for i = 2:length(tn)
+                                if attribute(tn[i], :lang) == lang 
+                                    text = content(tn[i])
+                                    break
+                                end
+                            end
+                        end
                         push!(df, (attribute(id, :OID),
                         cla,
                         attribute(cl, :Name),
@@ -714,7 +950,7 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
                         attribute(cli, :CodedValue),
                         attribute(cli, :Rank),
                         attribute(cli, :OrderNumber),
-                        content(text)))
+                        text))
             end
         end
     end
@@ -773,7 +1009,16 @@ function clinicaldatatable(cd::AbstractODMNode;
     # For TypedData
     datatype = String
     #df = DataFrame(SubjectKey = String[], StudyEventOID = CategoricalArray(String[]), FormOID = CategoricalArray(String[]), ItemGroupOID = CategoricalArray(String[]), ItemGroupRepeatKey = CategoricalArray(String[]), ItemOID = CategoricalArray(String[]), Value = String[])
-    df = DataFrame(SubjectKey = String[], StudyEventOID = String[], StudyEventRepeatKey = String[], FormOID = String[], FormRepeatKey = String[], ItemGroupOID = String[], ItemGroupRepeatKey = String[], ItemOID = String[], Value = datatype[])
+    df = DataFrame(SubjectKey = String[], 
+    StudyEventOID = String[], 
+    StudyEventRepeatKey = Union{Missing, String}[], 
+    FormOID = String[], 
+    FormRepeatKey = Union{Missing, String}[], 
+    ItemGroupOID = String[], 
+    ItemGroupRepeatKey = Union{Missing, String}[], 
+    ItemOID = String[], 
+    Value = datatype[])
+
     if isnothing(idlnames)
         idlnames = pushfirst!(collect(ITEMDATATYPE), :ItemData)
     end
