@@ -82,7 +82,15 @@
 				</Question>
 				<ExternalQuestion/>
 			</ItemDef>
-			<ItemDef OID="AN_1" Name="Height" DataType="integer" Length="3" SASFieldName="AN_1" Comment="Comments"></ItemDef>
+			<ItemDef OID="AN_1" Name="Height" DataType="integer" Length="3" SASFieldName="AN_1" Comment="Comments">
+				<RangeCheck Comparator = "GT" SoftHard = "Soft">
+					<CheckValue>10</CheckValue>
+					<FormalExpression Context="Julia">1 + 1</FormalExpression>
+					<ErrorMessage>
+						<TranslatedText>Error value</TranslatedText>
+					</ErrorMessage>
+				</RangeCheck>
+			</ItemDef>
 		</MetaDataVersion>
     </Study>
     <AdminData StudyOID = "ST_1_1">

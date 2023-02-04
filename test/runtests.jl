@@ -163,11 +163,22 @@ using Test
     @test_nowarn ODMXMLTools.studyinfo(odm, "ST_1_1";  io = io)
 
     # CHECK
-    @test_nowarn ODMXMLTools.validateodm(odm)
+    vodm = ODMXMLTools.validateodm(odm)
+    @test length(vodm) == 0
 
     cdv = ODMXMLTools.checkdatavalues(odm)
     @test length(cdv) == 0
     #
+
+    odmt = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "nvtest.xml"))
+    mdbt = ODMXMLTools.buildmetadata(odmt, "ST_1_1", "mdv_1")
+    vodm = ODMXMLTools.validateodm(odmt)
+    @test length(vodm) == 6
+    cdv  = ODMXMLTools.checkdatavalues(odmt)
+    @test length(cdv) == 1
+
+
+
     spssvallab =  ODMXMLTools.spss_form_value_labels(mdb, "FORM_VD_1"; variable = :OID)
     @test_nowarn show(io, spssvallab)
     spssvallab =  ODMXMLTools.spss_form_value_labels(mdb, "FORM_DEAN_1"; variable = :OID)
@@ -215,4 +226,5 @@ using Test
 
     @test_nowarn show(io, ODMXMLTools.NODEINFO[:Study])
     @test_nowarn show(io, ODMXMLTools.NODEINFO[:GlobalVariables])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:StudyName])
 end

@@ -44,7 +44,6 @@
           		</Description>
 				<FormRef FormOID="FORM_VD_1" Mandatory="Yes"/>
 				<FormRef FormOID="FORM_DEAN_1" Mandatory="Yes"/>
-				<ArchiveLayout OID = "AL_01" PdfFileName = "filename.pdf" PresentationOID = "PR_01"/>
 				<Alias Context = "context" Name = "name"></Alias>
 			</StudyEventDef>
 			<FormDef OID="FORM_DEAN_1" Name="Demographic and antropometric" Repeating="No">
@@ -53,6 +52,7 @@
           		</Description>
 				<ItemGroupRef ItemGroupOID="DE_IG_1" Mandatory="Yes" />
 				<ItemGroupRef ItemGroupOID="AN_IG_2" Mandatory="Yes" />
+				<ArchiveLayout OID = "AL_01" PdfFileName = "filename.pdf" PresentationOID = "PR_01"/>
 			</FormDef>
 			<ItemGroupDef OID="DE_IG_1" Name="Demographic" Repeating="No" SASDatasetName="DE_IG_1">
 				<Description>
