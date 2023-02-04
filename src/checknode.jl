@@ -1,4 +1,80 @@
 
+function checkattrs!(log, node, attrs, attrsref)
+    for r in attrsref
+        if !(r[1] in attrs) && r[2] == :! push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Attribute $(r[1]) not found.") end
+    end
+    for a in attrs
+        found = false
+        for r in attrsref
+            if a == r[1] found = true end
+        end
+        if !found push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected attribute: $(a)") end
+    end
+end
+
+function checkelements!(log, node, r)
+    cnt = countelements(node, r[1])
+    if r[2] == :! && cnt != 1 
+        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt != 1.") 
+        return false
+    elseif r[2] == :? && cnt > 1  
+        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt > 1.") 
+        return false
+    elseif r[2] == :+ && cnt == 0
+        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt < 1.") 
+        return false 
+    end
+    true
+end
+
+function checkchlds!(log, node, chlds, chldsref::AbstractVector)
+    for r in chldsref
+        if isa(r, NodeXOR)
+            nxor = falses(length(r.val))
+            for xr = 1:length(r.val)
+                nxor[xr] = checkelements!([], node, r.val[xr])
+            end
+            if !xor(nxor...)
+                str = ""
+                for nx = 1:length(nxor) 
+                    if nxor[nx] 
+                        str *= bcvecstr(r.val[nx])*": met. "
+                    end
+                end
+                push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child elements. More than one condition met from XOR list - "*str)
+            else
+                #check all falses too 
+            end
+
+        else
+            checkelements!(log, node, r)
+        end 
+    end
+    for c in chlds
+        found = false
+        for r in chldsref
+            if isa(r, NodeXOR)
+                for xr in r.val
+                    if name(c) == xr[1] found = true 
+                        break
+                    end
+                end
+            else
+                if name(c) == r[1] found = true 
+                    break
+                end
+            end
+        end
+        if !found push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected child node: $(name(c))") end
+    end
+end
+function checkchlds!(log, node, chlds, chldsref::String)
+    if length(chlds) > 0
+        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected child node, $chldsref expected.") 
+    end
+end
+
+
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType; integrity = false)
 end
@@ -161,33 +237,53 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Include}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Protocol}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Description}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyEventRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyEventDef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FormRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FormDef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupDef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDef}; integrity = false)
@@ -259,54 +355,88 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Question}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ExternalQuestion}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MeasurementUnitRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:RangeCheck}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ErrorMessage}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:CodeListRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Alias}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:CodeList}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:CodeListItem}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Decode}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ExternalCodeList}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:EnumeratedItem}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ArchiveLayout}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MethodDef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Presentation}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ConditionDef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FormalExpression}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:AdminData}; integrity = false)
