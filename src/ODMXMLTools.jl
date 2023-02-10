@@ -306,6 +306,20 @@ module ODMXMLTools
     :Symbol => [:TranslatedText],
     )
 
+	const SPLSTRATTRS = Set([:Repeating
+		:IsReferenceData
+		:Mandatory
+		:DataType
+		:Type	
+		:UserType
+		:LocationType
+		:Methodology
+		:TransactionType
+		:EditPoint
+		:UsedImputationMethod
+		:Comparator
+		:SoftHard])
+
     include("odmxml.jl")
     include("checknode.jl")
     include("spss.jl")
