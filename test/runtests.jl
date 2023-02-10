@@ -173,9 +173,9 @@ using Test
     odmt = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "nvtest.xml"))
     mdbt = ODMXMLTools.buildmetadata(odmt, "ST_1_1", "mdv_1")
     vodm = ODMXMLTools.validateodm(odmt)
-    @test length(vodm) == 6
+    @test length(vodm) == 7
     cdv  = ODMXMLTools.checkdatavalues(odmt)
-    @test length(cdv) == 1
+    @test length(cdv) == 3
 
 
 

@@ -22,7 +22,20 @@
 				<ItemRef ItemOID="I_3" OrderNumber="3" Mandatory="Yes" />
 			</ItemGroupDef>
 			<ItemDef OID="I_1" Name="SAD" DataType="integer" Length="3" SASFieldName="SAD" Comment="Systolic BP"></ItemDef>
-			<ItemDef OID="I_2" Name="DAD" DataType="integer" Length="3" SASFieldName="DAD" Comment="Diastolic BP"></ItemDef>
+			<ItemDef OID="I_2" Name="DAD" DataType="integer" Length="3" SASFieldName="DAD" Comment="Diastolic BP">
+				<RangeCheck Comparator = "GT" SoftHard = "Soft">
+					<CheckValue>10</CheckValue>
+					<ErrorMessage>
+						<TranslatedText>Error value GT</TranslatedText>
+					</ErrorMessage>
+				</RangeCheck>
+				<RangeCheck Comparator = "LT" SoftHard = "Soft">
+					<CheckValue>300</CheckValue>
+					<ErrorMessage>
+						<TranslatedText>Error value LT</TranslatedText>
+					</ErrorMessage>
+				</RangeCheck>
+			</ItemDef>
 			<ItemDef OID="I_3" Name="HR" DataType="integer" Length="3" SASFieldName="HR" Comment="Heart rate"></ItemDef>
 		</MetaDataVersion>
     </Study>
@@ -136,7 +149,7 @@
 				<FormData FormOID="FORM_VD_1">
 					<ItemGroupData ItemGroupOID="VIT_IG_1">
 						<ItemDataInteger ItemOID="I_1">x120</ItemDataInteger>
-						<ItemDataInteger ItemOID="I_2">80</ItemDataInteger>
+						<ItemDataInteger ItemOID="I_2">800</ItemDataInteger>
                         <ItemDataInteger ItemOID="I_3">63</ItemDataInteger>
                     </ItemGroupData>
                 </FormData>
@@ -155,7 +168,7 @@
 				<FormData FormOID="FORM_VD_1">
 					<ItemGroupData ItemGroupOID="VIT_IG_1">
                         <ItemData ItemOID="I_1" Value="121"/>
-                        <ItemData ItemOID="I_2" Value="79"/>
+                        <ItemData ItemOID="I_2" Value="790"/>
 						<ItemData ItemOID="I_3" Value="62"/>
                     </ItemGroupData>
                 </FormData>

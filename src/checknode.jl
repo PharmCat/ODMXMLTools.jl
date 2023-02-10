@@ -43,7 +43,9 @@ function checkchlds!(log, node, chlds, chldsref::AbstractVector)
                 end
                 push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child elements. More than one condition met from XOR list - "*str)
             else
-                #check all falses too 
+                if !any(nxor)
+                    push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child elements. No elements found.")
+                end
             end
 
         else
@@ -119,74 +121,37 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Study}; integrity = false)
-    ks = Set([:OID])
-    for k in keys(node.attr)
-        k in ks || push!(log, "$(name(node)) ($(attribute(node, :OID))): Unknown attribute ($(k))")
-    end
-    if :OID ∉ keys(node.attr)
-        push!(log, "$(name(node)): No OID")
-    end
-    gvn = 0
-    bdn = 0
-    for i in node.el
-        if name(i) ∉ Set([:GlobalVariables, :BasicDefinitions, :MetaDataVersion])
-            push!(log, "$(name(node)) ($(attribute(node, :OID))): Unexpected node ($(name(i))) in body")
-        end
-        name(i) == :GlobalVariables &&  (gvn += 1)
-        name(i) == :BasicDefinitions &&  (bdn += 1)
-    end
-    gvn == 1 || push!(log, "$(name(node)) ($(attribute(node, :OID))): GlobalVariables not 1 ($gvn)")
-    bdn <= 1 || push!(log, "$(name(node)) ($(attribute(node, :OID))): BasicDefinitions more than 1 ($bdn)")
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:GlobalVariables}; integrity = false)
-    length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s) - $(keys(node.attr))")
-    snn = 0
-    sdn = 0
-    pnn = 0
-    for i in node.el
-        if name(i) ∉ Set([:StudyName, :StudyDescription, :ProtocolName])
-            push!(log, "$(name(node)): Unexpected node ($(name(i))) in body")
-        end
-        name(i) == :StudyName &&  (snn += 1)
-        name(i) == :StudyDescription &&  (sdn += 1)
-        name(i) == :ProtocolName &&  (pnn += 1)
-    end
-    snn == 1 || push!(log, "$(name(node)): StudyName not 1 ($snn)")
-    sdn == 1 || push!(log, "$(name(node)): StudyDescription not 1 ($sdn)")
-    pnn == 1 || push!(log, "$(name(node)): ProtocolName not 1 ($pnn)")
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyName}; integrity = false)
-    length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s) - $(keys(node.attr))")
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyDescription}; integrity = false)
-    length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s) - $(keys(node.attr))")
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ProtocolName}; integrity = false)
-    length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s) - $(keys(node.attr))")
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:BasicDefinitions}; integrity = false)
-    length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s) - $(keys(node.attr))")
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MeasurementUnit}; integrity = false)
-    ks = Set([:OID, :Name])
-    for k in keys(node.attr)
-        k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
-    end
-    if :OID in keys(node.attr)
-        #other check
-    else
-        push!(log, "$(name(node)): No OID attribute")
-    end
-    if :Name in keys(node.attr)
-        #other check
-    else
-        push!(log, "$(name(node)): No Name attribute")
-    end
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 #parse(DateTime, "2022-01-21T13:23:36.45", dateformat"yyyy-mm-ddTHH:MM:SS.s")
 #ZonedDateTime("2022-01-21T13:23:36+00:00", "yyyy-mm-ddTHH:MM:SSzzzz")
@@ -194,24 +159,14 @@ end
 
 # A human-readable name for a measurement unit
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Symbol}; integrity = false)
-    length(node.attr) == 0 || push!(log, "$(name(node)): Unknown attribute(s) - $(keys(node.attr))")
-    ch = children(node)
-    for i in ch
-        if name(i) ∉ CHNS[name(node)] push!(log, "$(name(node)): Unexpected node ($(name(i))) in body") end
-    end
-    if countnodenames(node, :TranslatedText) < 1 push!(log, "$(name(node)): No TranslatedText node in body") end
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 #Human-readable text that is appropriate for a particular language. TranslatedText elements typically occur in a series, presenting a set of alternative textual renditions for different languages.
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:TranslatedText}; integrity = false)
-    ks = Set([:lang])
-    for k in keys(node.attr)
-        k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
-    end
-    if node.content == "" push!(log, "$(name(node)): No content is empty.") end
-    for i in children(node)
-        if !isa(i, ODMTextNode) push!(log, "$(name(node)): Unexpected node ($(name(i))) in body") end
-    end
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 #=
@@ -222,18 +177,8 @@ and separated with commas or vertical bars. Commas indicate that the elements (o
   followed by a ? (meaning optional), a * (meaning zero or more occurrences), or a + (meaning one or more occurrences).
 =#
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MetaDataVersion}; integrity = false)
-    ks = Set([:OID, :Name, :Description])
-    ns = Set([:Include, :Protocol, :StudyEventDef, :FormDef, :ItemGroupDef, :ItemDef, :CodeList, :ImputationMethod, :Presentation, :ConditionDef, :MethodDef])
-    for k in keys(node.attr)
-        k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
-    end
-    for i in node.el
-        name(i) in ns || push!(log, "$(name(node)): Unknown body node ($(name(i))")
-        cnt = findelements(node, :Include)
-        length(cnt) > 1 && push!(log, "$(name(node)): More than 1 Include elements")
-        cnt = findelements(node, :Protocol)
-        length(cnt) > 1 && push!(log, "$(name(node)): More than 1 Protocol elements")
-    end
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Include}; integrity = false)
@@ -286,11 +231,10 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
     checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDef}; integrity = false)
-    ks = Set([:OID, :Name, :DataType, :Length, :SignificantDigits, :SASFieldName, :SDSVarName, :Origin, :Comment])
-    for k in keys(node.attr)
-        k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
-    end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDef}; integrity = false)   
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+
     if :OID in keys(node.attr)
         #other check
     else
@@ -440,116 +384,265 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:AdminData}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:User}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:LoginName}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:DisplayName}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FullName}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FirstName}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:LastName}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Organization}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Address}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StreetName}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:City}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StateProv}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Country}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:PostalCode}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:OtherText}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Email}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Picture}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Pager}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Fax}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Phone}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:LocationRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Certificate}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Location}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MetaDataVersionRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:SignatureDef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Meaning}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:LegalReason}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ReferenceData}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ClinicalData}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:SubjectData}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyEventData}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FormData}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupData}; integrity = false)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemData}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
-#=
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataTyped}; integrity = false)
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataAny}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
-=#
-
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataString}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataInteger}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataFloat}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataDate}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataTime}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataDatetime}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataBoolean}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataHexBinary}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataBase64Binary}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataHexFloat}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataBase64Float}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataPartialDate}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataPartialTime}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataPartialDatetime}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataDurationDatetime}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataIntervalDatetime}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataIncompleteDatetime}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataIncompleteDate}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataIncompleteTime}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
+function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataURI}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+end
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ArchiveLayoutRef}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:AuditRecord}; integrity = false)
+    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
 end
 
 function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:UserRef}; integrity = false)
@@ -627,12 +720,6 @@ function nodenameslist(node)
     set
 end
 
-function existchildtextnode(node)
-    for i in children(node)
-        if isa(i, ODMTextNode) return true end
-    end
-    false
-end
 
 function validateodm_!(log::AbstractVector, root::ODMRoot, node::AbstractODMNode)
     checknode!(log, root, node, ODMNodeType(name(node)))
@@ -752,11 +839,12 @@ function checkdatavalues(odm::ODMRoot)
                                                 elseif itype == "boolean"
                                                     pval = tryparse(Bool, "false")
                                                 else
-                                                    pval = ""
+                                                    pval = val
                                                 end
                                                 if isnothing(pval)
                                                     pushlog!(log, :WARN, s, e, f, g, i, "DataType is $(itype), but value `$val` can't be parsed.")
                                                 end
+                                                # CODE LIST CHECK
                                                 clr = findelement(idef, :CodeListRef)
                                                 if !isnothing(clr)
                                                     cld = cldd[attribute(clr, :CodeListOID)]
@@ -767,6 +855,97 @@ function checkdatavalues(odm::ODMRoot)
                                                     if length(cvs) > 0
                                                         if val ∉ cvs
                                                             pushlog!(log, :WARN, s, e, f, g, i, "Value ($(val)) not in CodeListItem's CodedValue set.")
+                                                        end
+                                                    end
+                                                end
+                                                rcl = findelements(idef, :RangeCheck)
+                                                if length(rcl) > 0
+                                                    for rc in rcl
+                                                        comp = attribute(rc, :Comparator)
+                                                        if !ismissing(comp)
+                                                            errnode = findelement(rc, :ErrorMessage)
+                                                    
+                                                            if comp == "LT"
+                                                                cval = parse(Float64,content(findelement(rc, :CheckValue)))
+                                                                if !(pval < cval)  
+                                                                    if !isnothing(errnode)
+                                                                        errmsg = content(findelement(errnode, :TranslatedText))
+                                                                    else
+                                                                        errmsg = "No msg."
+                                                                    end
+                                                                    pushlog!(log, :WARN, s, e, f, g, i, "Value ($(pval)) not less than ($(cval): "*errmsg)
+                                                                end
+                                                            elseif comp == "LE"
+                                                                cval = parse(Float64,content(findelement(rc, :CheckValue)))
+                                                                if !(pval <= cval)
+                                                                    if !isnothing(errnode)
+                                                                        errmsg = content(findelement(errnode, :TranslatedText))
+                                                                    else
+                                                                        errmsg = "No msg."
+                                                                    end 
+                                                                    pushlog!(log, :WARN, s, e, f, g, i, "Value ($(pval)) not less than or equal to ($(cval):"*errmsg)
+                                                                end
+                                                            elseif comp == "GT"
+                                                                cval = parse(Float64,content(findelement(rc, :CheckValue)))
+                                                                if !(pval > cval)
+                                                                    if !isnothing(errnode)
+                                                                        errmsg = content(findelement(errnode, :TranslatedText))
+                                                                    else
+                                                                        errmsg = "No msg."
+                                                                    end
+                                                                    pushlog!(log, :WARN, s, e, f, g, i, "Value ($(pval)) not greater  than ($(cval):"*errmsg)
+                                                                end
+                                                            elseif comp == "GT"
+                                                                cval = parse(Float64,content(findelement(rc, :CheckValue)))
+                                                                if !(pval >= cval)
+                                                                    if !isnothing(errnode)
+                                                                        errmsg = content(findelement(errnode, :TranslatedText))
+                                                                    else
+                                                                        errmsg = "No msg."
+                                                                    end
+                                                                    pushlog!(log, :WARN, s, e, f, g, i, "Value ($(pval)) not greater than or equal to ($(cval):"*errmsg)
+                                                                end
+                                                            elseif comp == "EQ"
+                                                                cval = content(findelement(rc, :CheckValue))
+                                                                if !(val == cval)
+                                                                    if !isnothing(errnode)
+                                                                        errmsg = content(findelement(errnode, :TranslatedText))
+                                                                    else
+                                                                        errmsg = "No msg."
+                                                                    end
+                                                                    pushlog!(log, :WARN, s, e, f, g, i, "Value ($(pval)) not equal to ($(cval):"*errmsg)
+                                                                end
+                                                            elseif comp == "NE"
+                                                                cval = content(findelement(rc, :CheckValue))
+                                                                if val == cval
+                                                                    if !isnothing(errnode)
+                                                                        errmsg = content(findelement(errnode, :TranslatedText))
+                                                                    else
+                                                                        errmsg = "No msg."
+                                                                    end  
+                                                                    pushlog!(log, :WARN, s, e, f, g, i, "Value ($(pval)) equal to ($(cval):"*errmsg)
+                                                                end
+                                                            elseif comp == "IN"
+                                                                cval = content.(findelements(rc, :CheckValue))
+                                                                if val in cval 
+                                                                    if !isnothing(errnode)
+                                                                        errmsg = content(findelement(errnode, :TranslatedText))
+                                                                    else
+                                                                        errmsg = "No msg."
+                                                                    end
+                                                                    pushlog!(log, :WARN, s, e, f, g, i, "Value ($(pval)) not one of listed values: ($(cval):"*errmsg)
+                                                                end
+                                                            elseif comp == "NOIN"
+                                                                cval = content.(findelements(rc, :CheckValue))
+                                                                if !(val in cval) 
+                                                                    if !isnothing(errnode)
+                                                                        errmsg = content(findelement(errnode, :TranslatedText))
+                                                                    else
+                                                                        errmsg = "No msg."
+                                                                    end
+                                                                    pushlog!(log, :WARN, s, e, f, g, i, "Value ($(pval)) in listed values: ($(cval):"*errmsg)
+                                                                end
+                                                            end
                                                         end
                                                     end
                                                 end
