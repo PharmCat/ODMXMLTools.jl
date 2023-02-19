@@ -4,7 +4,7 @@ module ODMXMLTools
     #using Dates
 	import AbstractTrees
     import AbstractTrees: children, isroot
-    import Base: show, findfirst, findall
+    import Base: show, findfirst, findall, push!
 
     export importxml,
     findclinicaldata,

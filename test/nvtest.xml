@@ -14,7 +14,7 @@
 		</GlobalVariables>
 		<MetaDataVersion OID="mvd_tpl_1" Name="Tpl_Version_v1">
 			<FormDef OID="FORM_VD_1" Name="Vital data" Repeating="No">
-				<ItemGroupRef ItemGroupOID="VIT_IG_1" Mandatory="Yes" />
+				<ItemGroupRef ItemGroupOID="VIT_IG_1" Mandatory="Yess" />
 			</FormDef>
 			<ItemGroupDef OID="VIT_IG_1" Name="Vital data" Repeating="No" SASDatasetName="VIT_G01">
 				<ItemRef ItemOID="I_1" OrderNumber="1" Mandatory="Yes" />

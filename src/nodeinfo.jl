@@ -577,4 +577,110 @@ const NODEINFO = Dict{Symbol, NodeInfo}(
     [(:EditPoint, :?, [:Monitoring, :DataManagement, :DBAudit]), (:UsedImputationMethod, :?, [:Yes, :No]), (:ID, :?, "ID")],
     [(:UserRef, :!), (:LocationRef, :!), (:DateTimeStamp, :!), (:ReasonForChange, :?), (:SourceID, :?)]
 ),
+:UserRef => NodeInfo(:UserRef, 
+    [:AuditRecord, :Signature],
+    [(:UserOID, :!, "oidref")],
+    []
+),
+:DateTimeStamp => NodeInfo(:DateTimeStamp, 
+    [:AuditRecord, :Signature],
+    [],
+    "datetime"
+),
+:ReasonForChange => NodeInfo(:ReasonForChange, 
+    :AuditRecord,
+    [],
+    "text"
+),
+:SourceID => NodeInfo(:SourceID, 
+    :AuditRecord,
+    [],
+    "text"
+),
+:Signature => NodeInfo(:Signature, 
+    [:FormData, :ItemData, :ItemGroupData, :StudyEventData, :SubjectData, :Signatures],
+    [(:ID, :?, "ID")],
+    [(:UserRef, :!), (:LocationRef, :!), (:SignatureRef, :!), (:DateTimeStamp, :?)]
+),
+:SignatureRef => NodeInfo(:SignatureRef, 
+    :Signature,
+    [(:SignatureOID, :!, "oidref")],
+    []
+),
+:Annotation => NodeInfo(:Annotation, 
+    [:Association, :FormData, :ItemData, :ItemGroupData, :StudyEventData, :SubjectData, :Annotations],
+    [(:SeqNum, :!, "integer"),(:TransactionType, :?, [:Insert , :Update , :Remove , :Upsert , :Context]),(:ID, :?, "ID")],
+    [(:Comment, :?), (:Flag, :*)]
+),
+:Comment => NodeInfo(:Comment, 
+    :Annotation,
+    [(:SponsorOrSite, :!, [:Sponsor, :Site ])],
+    "text"
+),
+:Flag => NodeInfo(:Flag, 
+    :Annotation,
+    [],
+    [(:FlagValue, :!), (:FlagType, :?)]
+),
+:FlagValue => NodeInfo(:FlagValue, 
+    :Flag,
+    [(:CodeListOID, :!, "oidref")],
+    "text"
+),
+:FlagType => NodeInfo(:FlagType, 
+    :Flag,
+    [(:CodeListOID, :!, "oidref")],
+    "name"
+),
+:InvestigatorRef => NodeInfo(:InvestigatorRef, 
+    :SubjectData,
+    [(:UserOID, :!, "oidref")],
+    []
+),
+:SiteRef => NodeInfo(:SiteRef, 
+    :SubjectData,
+    [(:LocationOID, :!, "oidref")],
+    []
+),
+:AuditRecords => NodeInfo(:AuditRecords, 
+    [:ReferenceData, :ClinicalData],
+    [],
+    [(:AuditRecord, :*)]
+),
+:Signatures => NodeInfo(:Signatures, 
+    [:ReferenceData, :ClinicalData],
+    [],
+    [(:Signature, :*)]
+),
+:Annotations => NodeInfo(:Annotations, 
+    [:ReferenceData, :ClinicalData],
+    [],
+    [(:Annotation, :*)]
+),
+:Association => NodeInfo(:Association, 
+    :ODM,
+    [(:StudyOID, :!, "oidref"), (:MetaDataVersionOID, :!, "oidref")],
+    [(:KeySet, :!),(:KeySet, :!),(:Annotation, :!)]
+),
+:KeySet => NodeInfo(:KeySet, 
+    :Association,
+    [(:StudyOID, :!, "oidref"), (:SubjectKey, :?, "subjectKey"), (:StudyEventOID, :?, "oidref"),
+    (:StudyEventRepeatKey, :?, "repeatKey"), (:FormOID, :?, "oidref"), (:FormRepeatKey, :?, "repeatKey"), 
+    (:ItemGroupOID, :?, "oidref"), (:ItemGroupRepeatKey, :?, "repeatKey"), (:ItemOID, :?, "oidref")],
+    []
+),
+:Association => NodeInfo(:Association, 
+    :ODM,
+    [(:StudyOID, :!, "oidref"), (:MetaDataVersionOID, :!, "oidref")],
+    [(:KeySet, :!),(:KeySet, :!),(:Annotation, :!)]
+),
+)
+
+
+const NODEINFO_DS = Dict{Symbol, NodeInfo}(
+:Study => NodeInfo(:Study, 
+    :ODM,
+    [(:xmlns, :!, "CDATA"), (:Id, :?, "ID")],
+    [(:SignedInfo, :!), (:SignatureValue, :!), (:KeyInfo, :?), (:Object, :*)]
+    )
 )

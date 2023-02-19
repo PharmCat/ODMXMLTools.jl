@@ -164,7 +164,9 @@ using Test
 
     # CHECK
     vodm = ODMXMLTools.validateodm(odm)
-    @test length(vodm) == 0
+    @test length(vodm.log) == 0
+    @test_nowarn show(io, vodm)
+
 
     cdv = ODMXMLTools.checkdatavalues(odm)
     @test length(cdv) == 0
@@ -173,10 +175,14 @@ using Test
     odmt = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "nvtest.xml"))
     mdbt = ODMXMLTools.buildmetadata(odmt, "ST_1_1", "mdv_1")
     vodm = ODMXMLTools.validateodm(odmt)
-    @test length(vodm) == 7
+    @test length(vodm.log) == 8
+    @test_nowarn show(vodm, :INFO)
+    @test_nowarn show(io, vodm, :WARN)
+    @test_nowarn show(io, vodm, :ERROR)
+    @test_nowarn show(io, vodm, :SKIP)
+
     cdv  = ODMXMLTools.checkdatavalues(odmt)
     @test length(cdv) == 3
-
 
 
     spssvallab =  ODMXMLTools.spss_form_value_labels(mdb, "FORM_VD_1"; variable = :OID)
