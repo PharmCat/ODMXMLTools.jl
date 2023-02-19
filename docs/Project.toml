@@ -5,4 +5,4 @@ ODMXMLTools  = "2456a17b-6ca2-4f51-9342-f0287e829718"
 
 [compat]
 Documenter = "≥0.26"
-ODMXMLTools  = "0.5"
+ODMXMLTools  = "0.6"
