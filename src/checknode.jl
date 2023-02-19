@@ -1,27 +1,72 @@
 
+
+struct ODMXMLlog
+    log::Vector{Tuple{Symbol, String}}
+end
+
+function Base.push!(log::ODMXMLlog, msg::String)
+    push!(log.log, (:STR, msg))
+end
+function Base.push!(log::ODMXMLlog, msg)
+    push!(log.log, msg)
+end
+function Base.show(io::IO, log::ODMXMLlog)
+    w = 0
+    e = 0
+    i = 0
+    s = 0
+    for m in log.log
+        if m[1] == :WARN
+            w += 1
+        elseif m[1] == :ERROR
+            e += 1
+        elseif m[1] == :INFO
+            i += 1
+        elseif m[1] == :SKIP
+            s += 1
+        end
+    end
+    println(io, "ODMXML log: $(length(log.log)) item(s). Info = $i, Warnings = $w, Errors = $e, skipped $s node(s).")
+end
+
+function Base.show(io::IO, log::ODMXMLlog, type::Symbol)
+    for i in 1:length(log.log)
+        if type == log.log[i][1]
+            println(io, log.log[i][1], " - ", log.log[i][2])
+        end
+    end
+end
+Base.show(log::ODMXMLlog, type::Symbol) = show(stdout, log, type)
+
 function checkattrs!(log, node, attrs, attrsref)
     for r in attrsref
-        if !(r[1] in attrs) && r[2] == :! push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Attribute $(r[1]) not found.") end
+        if !(r[1] in attrs) 
+            if r[2] == :! push!(log, (:ERROR, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Attribute $(r[1]) not found.")) end
+        elseif isa(r[3], Vector{Symbol})
+            if !(Symbol(attribute(node, r[1])) in r[3])
+                push!(log, (:ERROR, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Attribute $(r[1]) value ($(attribute(node, r[1]))) not in list $(r[3]).")) 
+            end
+        end
     end
     for a in attrs
         found = false
         for r in attrsref
             if a == r[1] found = true end
         end
-        if !found push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected attribute: $(a)") end
+        if !found push!(log, (:WARN, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected attribute: $(a)")) end
     end
 end
 
 function checkelements!(log, node, r)
     cnt = countelements(node, r[1])
     if r[2] == :! && cnt != 1 
-        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt != 1.") 
+        push!(log, (:ERROR,"$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt != 1."))
         return false
     elseif r[2] == :? && cnt > 1  
-        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt > 1.") 
+        push!(log, (:ERROR,"$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt > 1."))
         return false
     elseif r[2] == :+ && cnt == 0
-        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt < 1.") 
+        push!(log, (:ERROR,"$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child ($(r[1])) elements count: $cnt < 1."))
         return false 
     end
     true
@@ -41,10 +86,10 @@ function checkchlds!(log, node, chlds, chldsref::AbstractVector)
                         str *= bcvecstr(r.val[nx])*": met. "
                     end
                 end
-                push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child elements. More than one condition met from XOR list - "*str)
+                push!(log, (:ERROR,"$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child elements. More than one condition met from XOR list - "*str))
             else
                 if !any(nxor)
-                    push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child elements. No elements found.")
+                    push!(log, (:ERROR,"$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Wrong child elements. No elements found."))
                 end
             end
 
@@ -67,46 +112,52 @@ function checkchlds!(log, node, chlds, chldsref::AbstractVector)
                 end
             end
         end
-        if !found push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected child node: $(name(c))") end
+        if !found push!(log, (:INFO,"$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected child node: $(name(c))")) end
     end
 end
 function checkchlds!(log, node, chlds, chldsref::String)
     if length(chlds) > 0
-        push!(log, "$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected child node, $chldsref expected.") 
+        push!(log, (:INFO,"$(name(node))$(hasattribute(node, :OID) ? "(OID: $(attribute(node, :OID, true)))" : ""): Unexpected child node, $chldsref expected."))
     end
 end
 
 
 
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType; integrity = false)
+function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType; integrity = false)
+    if haskey(NODEINFO, name(node))
+        checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
+        checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
+    else
+        push!(log, (:SKIP, "$(name(node)): Skipped unknown node."))
+    end
 end
 
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ODM}; integrity = false)
+function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ODM}; integrity = false)
     ks = Set([:Description, :FileType, :Granularity, :Archival, :FileOID, :CreationDateTime, :PriorFileOID, :AsOfDateTime, :ODMVersion, :Originator, :SourceSystem, :SourceSystemVersion, :ID])
     for k in keys(node.attr)
-        k in ks || push!(log, "$(name(node)): Unknown attribute ($(k))")
+        k in ks || push!(log, (:WARN, "$(name(node)): Unknown attribute ($(k)) in ODM (root) node."))
     end
     if :FileType in keys(node.attr)
-        attribute(node, :FileType) in FILETYPE || push!(log, "$(name(node)): Wrong FileType")
+        attribute(node, :FileType) in FILETYPE || push!(log, (:ERROR, "$(name(node)): Wrong FileType attribute in ODM (root) node."))
         #other check
     else
-        push!(log, "$(name(node)): No FileType attribute")
+        push!(log, (:WARN, "$(name(node)): No FileType attribute in ODM (root) node."))
     end
     if :Granularity in keys(node.attr)
-        attribute(node, :Granularity) in GRANULARITY || push!(log, "$(name(node)): Wrong Granularity")
+        attribute(node, :Granularity) in GRANULARITY || push!(log, (:ERROR, "$(name(node)): Wrong Granularity in ODM (root) node."))
     end
     if :Archival in keys(node.attr)
-        attribute(node, :Archival) in ARCHIVAL || push!(log, "$(name(node)): Wrong Archival")
-        attribute(node, :FileType) == "Transactional" || push!(log, "$(name(node)): Archival is $(attribute(node, "Archival")), but FileType not Transactional")
+        attribute(node, :Archival) in ARCHIVAL || push!(log, (:ERROR, "$(name(node)): Wrong Archival in ODM (root) node."))
+        attribute(node, :FileType) == "Transactional" || push!(log, (:ERROR,"$(name(node)): Archival is $(attribute(node, "Archival")), but FileType not Transactional in ODM (root) node."))
     end
     if :ODMVersion in keys(node.attr)
-        attribute(node, :ODMVersion) in ODMVERSION || push!(log, "$(name(node)): Wrong ODMVersion")
+        attribute(node, :ODMVersion) in ODMVERSION || push!(log, (:WARN,"$(name(node)): Wrong ODMVersion in ODM (root) node."))
     end
     if :FileOID ∉ keys(node.attr)
-        push!(log, "$(name(node)): No FileOID")
+        push!(log, (:WARN, "$(name(node)): No FileOID in ODM (root) node."))
     end
     if :CreationDateTime ∉ keys(node.attr)
-        push!(log, "$(name(node)): No CreationDateTime")
+        push!(log, (:WARN, "$(name(node)): No CreationDateTime in ODM (root) node."))
     else
         #datetime
     end
@@ -114,599 +165,41 @@ function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractOD
         #datetime
     end
     for i in node.el
-        if name(i) ∉ Set([:Study, :AdminData, :ReferenceData, :ClinicalData, :Association, Symbol("ds:Signature")])
-            push!(log, "$(name(node)): Unexpected node ($(name(i))) in body")
+        if name(i) ∉ Set([:Study, :AdminData, :ReferenceData, :ClinicalData, :Association, Symbol("Signature")])
+            push!(log, (:WARN, "$(name(node)): Unexpected node ($(name(i))) in body of ODM (root) node."))
         end
     end
 end
 
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Study}; integrity = false)
+function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupData}; integrity = false)
     checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:GlobalVariables}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyName}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyDescription}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ProtocolName}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:BasicDefinitions}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MeasurementUnit}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-#parse(DateTime, "2022-01-21T13:23:36.45", dateformat"yyyy-mm-ddTHH:MM:SS.s")
-#ZonedDateTime("2022-01-21T13:23:36+00:00", "yyyy-mm-ddTHH:MM:SSzzzz")
-#ZonedDateTime("2022-01-21T13:23:36.664+00:00", "yyyy-mm-ddTHH:MM:SS.s+zzzz")
-
-# A human-readable name for a measurement unit
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Symbol}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-#Human-readable text that is appropriate for a particular language. TranslatedText elements typically occur in a series, presenting a set of alternative textual renditions for different languages.
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:TranslatedText}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-#=
-An element group consists of one or more element names (or element groups) enclosed in parentheses, 
-and separated with commas or vertical bars. Commas indicate that the elements (or element groups)
- must occur in the XML sequentially in the order listed in the group. Vertical bars indicate that
-  exactly one of the elements (or element groups) must occur. An element or element group can be 
-  followed by a ? (meaning optional), a * (meaning zero or more occurrences), or a + (meaning one or more occurrences).
-=#
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MetaDataVersion}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Include}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Protocol}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Description}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyEventRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyEventDef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FormRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FormDef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupDef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDef}; integrity = false)   
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-
-    if :OID in keys(node.attr)
-        #other check
-    else
-        push!(log, "$(name(node)): No OID attribute")
+    dn = countnodenames(node, :ItemData)
+    if dn > 0
+        if countnodenames(node, ITEMDATATYPE) > 0 push!(log, (:WARN, "$(name(node)) (ItemGroupOID = $(attribute(node, :ItemGroupOID))): contains ItemData and ItemData[TYPE].")) end
     end
-    if :Name in keys(node.attr)
-        #other check
-    else
-        push!(log, "$(name(node)): No Name attribute")
+    dn = countnodenames(node, :AuditRecord)
+    if dn > 1 
+        push!(log, (:ERROR,"$(name(node)) (ItemGroupOID = $(attribute(node, :ItemGroupOID))): Wrong child (AuditRecord) elements count: $dn > 1."))
     end
-    if :DataType in keys(node.attr)
-        attribute(node, :DataType) in DATATYPES || push!(log, "$(name(node)): Wrong DataType")
-    else
-        push!(log, "$(name(node)): No DataType attribute")
-    end
-    # Check child nodes
-    nnamelist = nodenameslist(node) 
-    for i in nnamelist
-        if i ∉ Set([:Description, :Question, :ExternalQuestion, :MeasurementUnitRef, :RangeCheck, :CodeListRef, :Alias]) 
-            push!(log, "$(name(node)): Unknown child node ($(i))")
-        end
-    end
-
-    fel = findelements(node, :Description)
-    if !isnothing(fel)
-        if length(fel) > 1 push!(log, "$(name(node)): More than one Description elements") end
-        #other check
-    end
-
-    fel = findelements(node, :Question)
-    if !isnothing(fel)
-        if length(fel) > 1 push!(log, "$(name(node)): More than one Question elements") end
-        #other check
-    end
-
-    fel = findelements(node, :ExternalQuestion)
-    if !isnothing(fel)
-        if length(fel) > 1 push!(log, "$(name(node)): More than one ExternalQuestion elements") end
-        #other check
-    end
-
-    fel = findelements(node, :MeasurementUnitRef)
-    if !isnothing(fel)
-        #other check
-    end
-
-    fel = findelements(node, :RangeCheck)
-    if !isnothing(fel)
-        #other check
-    end
-
-    fel = findelements(node, :CodeListRef)
-    if !isnothing(fel)
-        if length(fel) > 1 push!(log, "$(name(node)): More than one ExternalQuestion elements") end
-        #other check
-    end
-
-    fel = findelements(node, :Alias)
-    if !isnothing(fel)
-        #other check
+    dn = countnodenames(node, :Signature)
+    if dn > 1 
+        push!(log, (:ERROR,"$(name(node)) (ItemGroupOID = $(attribute(node, :ItemGroupOID))): Wrong child (Signature) elements count: $dn > 1."))
     end
 end
 
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Question}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ExternalQuestion}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MeasurementUnitRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:RangeCheck}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ErrorMessage}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:CodeListRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Alias}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:CodeList}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:CodeListItem}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Decode}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ExternalCodeList}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:EnumeratedItem}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ArchiveLayout}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MethodDef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Presentation}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ConditionDef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FormalExpression}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:AdminData}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:User}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:LoginName}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:DisplayName}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FullName}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FirstName}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:LastName}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Organization}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Address}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StreetName}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:City}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StateProv}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Country}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:PostalCode}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:OtherText}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Email}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Picture}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Pager}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Fax}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Phone}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:LocationRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Certificate}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Location}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:MetaDataVersionRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:SignatureDef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Meaning}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:LegalReason}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ReferenceData}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ClinicalData}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:SubjectData}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:StudyEventData}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FormData}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupData}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemData}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataAny}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataString}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataInteger}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataFloat}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataDate}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataTime}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataDatetime}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataBoolean}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataHexBinary}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataBase64Binary}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataHexFloat}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataBase64Float}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataPartialDate}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataPartialTime}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataPartialDatetime}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataDurationDatetime}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataIntervalDatetime}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataIncompleteDatetime}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataIncompleteDate}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataIncompleteTime}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemDataURI}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ArchiveLayoutRef}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:AuditRecord}; integrity = false)
-    checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
-    checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:UserRef}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:DateTimeStamp}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ReasonForChange}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:SourceID}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Signature}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:SignatureRef}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Annotation}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Comment}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Flag}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FlagValue}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:FlagType}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:InvestigatorRef}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:SiteRef}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:AuditRecords}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Signatures}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Annotations}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:Association}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:KeySet}; integrity = false)
-end
-
-function checknode!(log::AbstractVector, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{Symbol("ds:Signature")}; integrity = false)
-end
-
-function countnodenames(node, nodename)
+function countnodenames(node, nodename::Symbol)
     cnt = 0
     ch = children(node)
     for i in ch
         if name(i) == nodename cnt += 1 end
+    end
+    cnt
+end
+function countnodenames(node, nodenames)
+    cnt = 0
+    ch = children(node)
+    for i in ch
+        if name(i) in nodenames cnt += 1 end
     end
     cnt
 end
@@ -721,10 +214,14 @@ function nodenameslist(node)
 end
 
 
-function validateodm_!(log::AbstractVector, root::ODMRoot, node::AbstractODMNode)
+function validateodm_!(log::ODMXMLlog, root::ODMRoot, node::AbstractODMNode; odmnamespace::Symbol)
     checknode!(log, root, node, ODMNodeType(name(node)))
     for i in node.el
-        validateodm_!(log, root, i)
+        if i.namespace == odmnamespace
+            validateodm_!(log, root, i; odmnamespace = odmnamespace)
+        else
+            push!(log, (:SKIP, "Node ($(name(i))) from namespace \"$(i.namespace)\" skipped from check."))
+        end
     end
 end
 
@@ -737,9 +234,9 @@ Basic structure validation.
     Not full implemented.
 
 """
-function validateodm(odm::ODMRoot)
-    log = String[]
-    validateodm_!(log, odm, odm)
+function validateodm(odm::ODMRoot; odmnamespace::Symbol = Symbol(""))
+    log = ODMXMLlog(Tuple{Symbol, String}[])
+    validateodm_!(log, odm, odm; odmnamespace = odmnamespace)
     log
 end
 

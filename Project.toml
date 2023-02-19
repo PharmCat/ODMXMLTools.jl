@@ -1,7 +1,7 @@
 name = "ODMXMLTools"
 uuid = "2456a17b-6ca2-4f51-9342-f0287e829718"
 authors = ["PharmCat <v.s.arnautov@yandex.ru>"]
-version = "0.5.1"
+version = "0.6.0"
 
 [deps]
 

@@ -15,11 +15,22 @@ struct ODMNode <: AbstractODMNode
     attr::Dict{Symbol, String}
     el::Vector{ODMNode}
     content::String
+    namespace::Symbol
+
+    function ODMNode(name, attr, content::String, namespace::Symbol) 
+        new(name, attr, ODMNode[], content, namespace)
+    end
+    function ODMNode(name, attr, content, ::Nothing) 
+        ODMNode(name, attr, content, Symbol(""))
+    end
+    function ODMNode(name, attr, ::Nothing, namespace) 
+        ODMNode(name, attr, "", namespace)
+    end
     function ODMNode(name, attr, content) 
-        new(name, attr, ODMNode[], content)
+        ODMNode(name, attr, ODMNode[], content, "")
     end
     function ODMNode(name, attr)
-        ODMNode(name, attr, ODMNode[], "")
+        ODMNode(name, attr, ODMNode[], "", "")
     end
 end
 
@@ -27,7 +38,7 @@ struct ODMRoot <: AbstractODMNode
     name::Symbol
     attr::Dict{Symbol, String}
     el::Vector{ODMNode}
-    ns::Vector
+    ns::Dict{String, Symbol}
     function ODMRoot(attr, ns)
         new(:ODM, attr, ODMNode[], ns)
     end
@@ -88,36 +99,49 @@ function importxml(file::AbstractString)
     isfile(file) || error("File not found!")
     xdoc  = readxml(file)
     xodm  = root(xdoc)
-    ns    = namespaces(xodm)
+    nsv = namespaces(xodm)
+    if EzXML.hasnamespace(xodm)
+        nsv = namespaces(xodm)
+    else
+        nsv = ["" => ""]
+    end
+    ns    = Dict([p[2] => Symbol(p[1]) for p in nsv]...)
     odm   = ODMRoot(attributes_dict(xodm), ns)
-    importxml_(odm, xodm)
+    importxml_(odm, xodm, ns)
     odm
 end
-    function importxml_(parent, root)
-        if hasnode(root)
-            chld = EzXML.eachnode(root)
-            for c in chld
-                content = ""
-                attr = Dict{Symbol, String}()
-                if iselement(c)
-                    attributes_dict!(attr, c)
-                    if !haselement(c)
-                        tv = EzXML.eachnode(root)
-                        for t in tv
-                            if istext(t)
-                                content = nodecontent(c)
-                                break
-                            end
-                        end
+
+function importxml_(parent, root, ns)
+    if hasnode(root)
+        chld = EzXML.eachelement(root)
+        for c in chld
+            content = nothing
+            attr = Dict{Symbol, String}()
+            #if iselement(c)
+            attributes_dict!(attr, c)
+            if !haselement(c)
+                tv = EzXML.eachnode(root)
+                for t in tv
+                    if istext(t)
+                        content = nodecontent(c)
+                        break
                     end
-                    odmn = ODMNode(Symbol(nodename(c)), attr, content)
-                    push!(parent.el, odmn)
-                    if haselement(c) importxml_(odmn, c) end
                 end
             end
+            if EzXML.hasnamespace(c)
+                nns = ns[c.namespace]
+            else
+                nns = Symbol("")
+            end
+            odmn = ODMNode(Symbol(nodename(c)), attr, content, nns)
+            push!(parent.el, odmn)
+            if haselement(c) importxml_(odmn, c, ns) end
+            #end
         end
-        parent
     end
+    parent
+end
+
 ################################################################################
 # SUPPORT FUNCTIONS
 ################################################################################
@@ -868,18 +892,6 @@ ItemDef questions.
 function itemquestion(md::AbstractODMNode; lang = ["en"])
     nodedesqu_(md::AbstractODMNode, :ItemDef, :Question; lang = lang)
 end
-
-
-
-
-
-
-
-
-
-
-
-
 
 """
     codelisttable(cd::AbstractODMNode; lang = nothing)
