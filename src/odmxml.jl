@@ -5,9 +5,6 @@ struct ODMNodeType{Symbol} <: AbstractODMNodeType
     function ODMNodeType(s::Symbol)
         new{s}()
     end
-    function ODMNodeType(::Nothing)
-        new{:TextNode}()
-    end
 end
 
 struct ODMNode <: AbstractODMNode
@@ -28,9 +25,6 @@ struct ODMNode <: AbstractODMNode
     end
     function ODMNode(name, attr, content) 
         ODMNode(name, attr, ODMNode[], content, "")
-    end
-    function ODMNode(name, attr)
-        ODMNode(name, attr, ODMNode[], "", "")
     end
 end
 
@@ -71,12 +65,12 @@ function AbstractTrees.isroot(x::AbstractODMNode)
 end
 
 #AbstractTrees.nodetype(::IntTree) = IntTree
-
+#=
 function makenode(str, attr)
     #symb = Symbol(str)
     return ODMNode(Symbol(str), attr)
 end
-
+=#
 function attributes_dict(n)
     d = Dict{Symbol, String}()
     for i in eachattribute(n)
