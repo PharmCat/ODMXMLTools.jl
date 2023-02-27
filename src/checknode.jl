@@ -123,7 +123,7 @@ end
 
 
 
-function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType; integrity = false)
+function checknode!(log::ODMXMLlog, node::AbstractODMNode, ::ODMNodeType)
     if haskey(NODEINFO, name(node))
         checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
         checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
@@ -132,7 +132,7 @@ function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode
     end
 end
 
-function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ODM}; integrity = false)
+function checknode!(log::ODMXMLlog, node::AbstractODMNode, ::ODMNodeType{:ODM})
     ks = Set([:Description, :FileType, :Granularity, :Archival, :FileOID, :CreationDateTime, :PriorFileOID, :AsOfDateTime, :ODMVersion, :Originator, :SourceSystem, :SourceSystemVersion, :ID])
     for k in keys(node.attr)
         k in ks || push!(log, (:WARN, "$(name(node)): Unknown attribute ($(k)) in ODM (root) node."))
@@ -171,7 +171,7 @@ function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode
     end
 end
 
-function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupData}; integrity = false)
+function checknode!(log::ODMXMLlog, node::AbstractODMNode, ::ODMNodeType{:ItemGroupData})
     checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
     dn = countnodenames(node, :ItemData)
     if dn > 0
@@ -214,11 +214,20 @@ function nodenameslist(node)
 end
 
 
-function validateodm_!(log::ODMXMLlog, root::ODMRoot, node::AbstractODMNode; odmnamespace::Symbol)
-    checknode!(log, root, node, ODMNodeType(name(node)))
+function validateodm_!(log::ODMXMLlog, node::AbstractODMNode; odmnamespace::Symbol)
+    checknode!(log, node, ODMNodeType(name(node)))
     for i in node.el
         if i.namespace == odmnamespace
-            validateodm_!(log, root, i; odmnamespace = odmnamespace)
+            validateodm_!(log, i; odmnamespace = odmnamespace)
+        else
+            push!(log, (:SKIP, "Node ($(name(i))) from namespace \"$(i.namespace)\" skipped from check."))
+        end
+    end
+end
+function validateodm_!(log::ODMXMLlog, node::StudyMetaData; odmnamespace::Symbol)
+    for i in node.el
+        if i.namespace == odmnamespace
+            validateodm_!(log, i; odmnamespace = odmnamespace)
         else
             push!(log, (:SKIP, "Node ($(name(i))) from namespace \"$(i.namespace)\" skipped from check."))
         end
@@ -226,7 +235,7 @@ function validateodm_!(log::ODMXMLlog, root::ODMRoot, node::AbstractODMNode; odm
 end
 
 """
-    validateodm(odm::ODMRoot)
+    validateodm(odm::AbstractODMNode)
 
 Basic structure validation.
 
@@ -234,9 +243,9 @@ Basic structure validation.
     Not full implemented.
 
 """
-function validateodm(odm::ODMRoot; odmnamespace::Symbol = Symbol(""))
+function validateodm(odm::AbstractODMNode; odmnamespace::Symbol = Symbol(""))
     log = ODMXMLlog(Tuple{Symbol, String}[])
-    validateodm_!(log, odm, odm; odmnamespace = odmnamespace)
+    validateodm_!(log, odm; odmnamespace = odmnamespace)
     log
 end
 

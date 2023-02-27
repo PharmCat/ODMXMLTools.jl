@@ -24,7 +24,10 @@ struct ODMNode <: AbstractODMNode
         ODMNode(name, attr, "", namespace)
     end
     function ODMNode(name, attr, content) 
-        ODMNode(name, attr, ODMNode[], content, "")
+        ODMNode(name, attr, content, Symbol(""))
+    end
+    function ODMNode(name, attr) 
+        ODMNode(name, attr, "", Symbol(""))
     end
 end
 
@@ -40,7 +43,7 @@ end
 
 struct StudyMetaData <: AbstractODMNode
     metadata::ODMNode
-    el::Vector{AbstractODMNode}
+    el::Vector{ODMNode}
 end
 
 function Base.show(io::IO, n::T) where T <: AbstractODMNode
@@ -137,6 +140,12 @@ function importxml_(parent, root, ns)
 end
 
 ################################################################################
+# BASE FUNCTIONS
+################################################################################
+function Base.deleteat!(node::AbstractODMNode, inds)
+    deleteat!(node.el, inds)
+end
+################################################################################
 # SUPPORT FUNCTIONS
 ################################################################################
 function hasattribute(n::AbstractODMNode, attr::Symbol)
@@ -156,6 +165,11 @@ end
 function attributes(n::AbstractODMNode, attrs)
     broadcast(x-> attribute(n, x), attrs)
 end
+
+function setattribute!(n::AbstractODMNode, attr::Symbol, val::String)
+    n.attr[attr] = val
+end
+
 function addattributes!(a, n::AbstractODMNode, attrs)
     for i in attrs
         push!(a, attribute(n, i))
@@ -164,8 +178,11 @@ function addattributes!(a, n::AbstractODMNode, attrs)
 end
 
 
-function name(n::ODMRoot)
+function name(::ODMRoot)
     :ODM
+end
+function name(::StudyMetaData)
+    :StudyMetaData
 end
 function name(n::ODMNode)
     getfield(n, :name)
@@ -212,6 +229,12 @@ end
 
 function content(n::AbstractODMNode)
     n.content
+end
+function content(n::ODMRoot)
+    ""
+end
+function content(::StudyMetaData)
+    ""
 end
 
 function getitemdatavalue(n::AbstractODMNode, null)
@@ -262,6 +285,19 @@ function findelement(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
         if i.name == nname
             if have_oid(i)
                 if attribute(i, :OID) == oid return i end
+            end
+        end
+    end
+end
+"""
+    Find index of element.
+"""
+function findelementind(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
+    for i in 1:length(n.el)
+        el = n.el[i]
+        if name(el) == nname
+            if have_oid(el)
+                if attribute(el, :OID) == oid return i end
             end
         end
     end
@@ -318,6 +354,20 @@ Find all elements by node name `nnames` (list).
 function findelements(n::AbstractODMNode, nnames::Vector{Symbol})
     findelements_(n.el, nnames)
 end
+
+"""
+    Find all elements indexes by node name `nname`.
+"""
+function findelementinds(n, nname::Symbol)
+    inds = Int[]
+    for i in 1:length(n.el)
+        if name(n.el[i]) == nname
+            push!(inds, i)
+        end
+    end
+    inds
+end
+
 
 Base.findall(n::AbstractODMNode, args...) = findelements(n, args...)
 """
@@ -1365,4 +1415,36 @@ function deleteclinicaldata!(odm::ODMRoot, soid::AbstractString)
         deleteat!(odm.el, inds)
     end
     odm
+end
+
+
+#
+#
+#
+
+function writenode(node::AbstractODMNode)
+    writenode(stdout, node::AbstractODMNode)
+end
+function writenode(io::IO, node::AbstractODMNode)
+    writenode(io::IO, node::AbstractODMNode, 0)
+end
+function writenode(io::IO, node::AbstractODMNode, sp::Int)
+    if sp > 0
+        for n in 1:sp print(io, "    ") end
+    end
+    print(io, "<$(name(node))")
+    for (k,v) in node.attr
+        print(io, " $k=\"$v\"")
+    end
+    print(io, ">$(content(node))")
+    if length(node.el) > 0
+        println(io, "")
+        for n in node.el
+            writenode(io, n, sp+1)
+        end
+        if sp > 0
+            for n in 1:sp print(io, "    ") end
+        end
+    end
+    println(io, "</$(name(node))>")
 end
