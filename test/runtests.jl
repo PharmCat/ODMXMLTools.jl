@@ -299,3 +299,10 @@ using Test
     @test length(cdv) == 3
 
 end
+
+#=
+using  EzXML
+doc = EzXML.readxml(joinpath(dirname(@__FILE__), "test.xml"))
+dtdn = EzXML.readdtd(joinpath(dirname(@__FILE__), "test-schema.dtd"))
+EzXML.validate(doc, dtdn)
+=#

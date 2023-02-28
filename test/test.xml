@@ -213,6 +213,25 @@
     </AdminData>
     <ReferenceData StudyOID="ST_1_1" MetaDataVersionOID="mdv_1">
     </ReferenceData>
+	<ReferenceData StudyOID = "ST_2_1" MetaDataVersionOID = "mdv_2">
+		<AuditRecords>
+			<AuditRecord EditPoint = "Monitoring">
+				<UserRef UserOID = "useroid_1"></UserRef>
+				<LocationRef LocationOID = "LOC_001"></LocationRef>
+				<DateTimeStamp>2022-10-10T20:40:40</DateTimeStamp>
+			</AuditRecord>
+		</AuditRecords>
+		<Signatures>
+			<Signature>
+				<UserRef UserOID = "useroid_1"></UserRef>
+				<LocationRef LocationOID = "LOC_001"></LocationRef>
+				<SignatureRef SignatureOID = "SIG_01"></SignatureRef>
+				<DateTimeStamp>2022-10-10T20:40:40</DateTimeStamp>
+			</Signature>
+		</Signatures>
+		<Annotations>
+		</Annotations>
+	</ReferenceData>
     <ClinicalData StudyOID="ST_1_1" MetaDataVersionOID="mdv_1">
       <SubjectData SubjectKey="001">
             <StudyEventData StudyEventOID="SE_VIZIT1">
@@ -341,23 +360,4 @@
             </StudyEventData>
       </SubjectData>
     </ClinicalData>
-	<ReferenceData StudyOID = "ST_2_1" MetaDataVersionOID = "mdv_2">
-		<AuditRecords>
-			<AuditRecord EditPoint = "Monitoring">
-				<UserRef UserOID = "useroid_1"></UserRef>
-				<LocationRef LocationOID = "LOC_001"></LocationRef>
-				<DateTimeStamp>2022-10-10T20:40:40</DateTimeStamp>
-			</AuditRecord>
-		</AuditRecords>
-		<Signatures>
-			<Signature>
-				<UserRef UserOID = "useroid_1"></UserRef>
-				<LocationRef LocationOID = "LOC_001"></LocationRef>
-				<SignatureRef SignatureOID = "SIG_01"></SignatureRef>
-				<DateTimeStamp>2022-10-10T20:40:40</DateTimeStamp>
-			</Signature>
-		</Signatures>
-		<Annotations>
-		</Annotations>
-	</ReferenceData>
 </ODM>
