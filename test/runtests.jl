@@ -6,8 +6,20 @@ using Test
 #cd(path)
 
 @testset "ODMXMLTools.jl" begin
-
+    
     io = IOBuffer();
+
+    # Make node
+    name = :NodeName
+    attr = Dict(:attr => "value")
+    content = "content"
+    namespace = :NameSpace
+    @test_nowarn show(io, ODMXMLTools.ODMNode(name, attr, content, namespace))
+    @test_nowarn  ODMXMLTools.ODMNode(name, attr, content, nothing) 
+    @test_nowarn  ODMXMLTools.ODMNode(name, attr, nothing, namespace) 
+    @test_nowarn  ODMXMLTools.ODMNode(name, attr, content) 
+    @test_nowarn  ODMXMLTools.ODMNode(name, attr) 
+  
     # Import
 
     odm = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "test.xml"))
@@ -47,6 +59,10 @@ using Test
 
     # Build metadata for study ST_1_1 (only one metadata available)
     mdb = ODMXMLTools.buildmetadata(odm, "ST_1_1", "mdv_1")
+    # content 
+    @test ODMXMLTools.content(mdb) == ""
+    # name
+    @test ODMXMLTools.name(mdb) == :StudyMetaData
     # No optional
     evl = ODMXMLTools.eventlist(mdb; categ = true)
     @test collect(evl[1, :]) == ["SE_VIZIT1"
@@ -86,9 +102,10 @@ using Test
     "HR"]
 
     # CONTENT
-
+    @test_nowarn ODMXMLTools.protocolcontent(mdb; optional = false, categ = false)
     prc = ODMXMLTools.protocolcontent(mdb; optional = true, categ = true)
 
+    @test_nowarn ODMXMLTools.eventcontent(mdb; optional = false, categ = false)
     ec = ODMXMLTools.eventcontent(mdb; optional = true, categ = true)
     @test ec[!, 2] ==  ODMXMLTools.eventcontent(mdb, "SE_VIZIT1"; optional = true, categ = true)[!, 2]
 
@@ -99,11 +116,14 @@ using Test
     fc = ODMXMLTools.formcontent(mdb, "FORM_VD_1")
     @test fc[1, :ItemGroupOID] == "VIT_IG_1"
 
+    ODMXMLTools.itemgroupcontent(mdb, "VIT_IG_1"; optional = true, categ = true)
     igc = ODMXMLTools.itemgroupcontent(mdb, "VIT_IG_1")
     @test igc[:, 2] == ["I_1"
     "I_2"
     "I_3"]
 
+    igca = ODMXMLTools.itemgroupcontent(mdb)
+    @test size(igca) == (7, 3)
     
     # Find
     
@@ -135,7 +155,7 @@ using Test
     igd =  ODMXMLTools.findelement(mdb, :ItemGroupDef, "AN_IG_2")
     @test ODMXMLTools.name(igd) == :ItemGroupDef
 
-    @test_nowarn ODMXMLTools.clinicaldatatable(odm, addstudyid= true, addstudyidcol = true)
+    @test_nowarn ODMXMLTools.clinicaldatatable(odm, addstudyid= true, addstudyidcol = true, categ = true)
 
     cdat = ODMXMLTools.findclinicaldata(odm, "ST_1_1", "mdv_1")
     @test cdat == ODMXMLTools.findclinicaldata(odm, "ST_1_1")[1]
@@ -157,6 +177,8 @@ using Test
     @test_nowarn ODMXMLTools.clinicaldatatable(odm, "ST_1_1", "mdv_1")
 
     @test_nowarn ODMXMLTools.subjectdatatable(odm; attrs = [:SubjectKey, :StudySubjectID])
+    @test_nowarn ODMXMLTools.subjectdatatable(odm; optional = true )
+    @test_nowarn ODMXMLTools.subjectdatatable(odm; optional = false )
 
 
     ############
