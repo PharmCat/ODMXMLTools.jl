@@ -148,9 +148,19 @@ end
 ################################################################################
 # SUPPORT FUNCTIONS
 ################################################################################
+"""
+    hasattribute(n::AbstractODMNode, attr::Symbol)
+
+Return `true` if node have attribute `attr`.
+"""
 function hasattribute(n::AbstractODMNode, attr::Symbol)
     haskey(getfield(n, :attr), attr)
 end
+"""
+    attribute(n::AbstractODMNode, attr::Symbol, str::Bool = false)
+
+Return attribute value. If `str` is `true` - always return `String`. 
+"""
 function attribute(n::AbstractODMNode, attr::Symbol, str::Bool = false)
     attrf = getfield(n, :attr)
     if haskey(attrf, attr) 
@@ -178,15 +188,21 @@ function addattributes!(a, n::AbstractODMNode, attrs)
 end
 
 
+"""
+    name(n::ODMNode)
+
+Return name of ODM node.
+"""
+function name(n::ODMNode)
+    getfield(n, :name)
+end
 function name(::ODMRoot)
     :ODM
 end
 function name(::StudyMetaData)
     :StudyMetaData
 end
-function name(n::ODMNode)
-    getfield(n, :name)
-end
+
 
 isMetaDataVersion(node::AbstractODMNode) = name(node) == :MetaDataVersion
 isStudy(node::AbstractODMNode) = name(node) == :Study
@@ -203,11 +219,14 @@ isItemGroupData(node::AbstractODMNode) = name(node) == :ItemGroupData
 isItemData(node::AbstractODMNode) = name(node) == :ItemData
 isItemDataType(node::AbstractODMNode) = name(node) in ITEMDATATYPE
 
+#=
 function have_attr(n::AbstractODMNode, attr::Symbol)
     if  haskey(getfield(n, :attr), attr) return true else return false end
 end
+=#
+
 function have_oid(n::AbstractODMNode)
-    have_attr(n, :OID)
+    hasattribute(n, :OID)
 end
 function appendelements!(inds::AbstractVector, n::AbstractODMNode, nname::Symbol)
     for i in n.el
@@ -227,6 +246,11 @@ function appendelements!(inds::AbstractVector, n::AbstractODMNode, nname::Union{
     inds
 end
 
+"""
+    content(n::AbstractODMNode)
+    
+Return node content.
+"""
 function content(n::AbstractODMNode)
     n.content
 end

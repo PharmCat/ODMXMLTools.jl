@@ -8,9 +8,12 @@ using Test
 @testset "ODMXMLTools.jl" begin
 
     io = IOBuffer();
+    # Import
+
     odm = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "test.xml"))
     @test_nowarn show(io, odm)
 
+    # List
     mdl = ODMXMLTools.metadatalist(odm)
     @test mdl[:, 1] == [ "TEMPLATE_ST_01"
     "ST_1_1"
@@ -34,6 +37,7 @@ using Test
     # Build metadata for template
     mdb = ODMXMLTools.buildmetadata(odm, "TEMPLATE_ST_01", "mvd_tpl_1")
     @test_nowarn show(io, mdb)
+
     # no event list
     evl = ODMXMLTools.eventlist(mdb; categ = true)
     @test size(evl) == (0, 4)
@@ -73,6 +77,16 @@ using Test
     itl =  ODMXMLTools.itemlist(mdb; optional = true)
     itl =  ODMXMLTools.itemlist(mdb.el)
 
+    ifc =  ODMXMLTools.itemformlist(mdb, "FORM_VD_1"; optional = true)
+    @test ifc[:, 1] == ["I_1"
+    "I_2"
+    "I_3"]
+    @test ifc[:, 2] == ["SAD"
+    "DAD"
+    "HR"]
+
+    # CONTENT
+
     prc = ODMXMLTools.protocolcontent(mdb; optional = true, categ = true)
 
     ec = ODMXMLTools.eventcontent(mdb; optional = true, categ = true)
@@ -90,8 +104,8 @@ using Test
     "I_2"
     "I_3"]
 
-    ifc =  ODMXMLTools.itemformlist(mdb, "FORM_VD_1"; optional = true)
-
+    
+    # Find
     
     st1 =  ODMXMLTools.findstudy(odm, "ST_1_1")
     @test_nowarn show(io, st1)
@@ -102,8 +116,16 @@ using Test
     @test_nowarn show(io, el)
     @test ODMXMLTools.content(el) == "Study 1"
 
+    mdvind = ODMXMLTools.findelementind(st1, :MetaDataVersion, "mdv_1")
+    @test mdvind == 2
     mdv = ODMXMLTools.findelement(st1, :MetaDataVersion, "mdv_1")
     @test mdv == ODMXMLTools.findstudymetadata(odm, "ST_1_1", "mdv_1")
+
+    idfe = ODMXMLTools.findelements(mdv, :ItemDef)
+    @test all(ODMXMLTools.name.(idfe) .== :ItemDef)
+
+    idfei = ODMXMLTools.findelementinds(mdv, :ItemDef)
+    @test idfei == [7, 8]
 
     @test_nowarn ODMXMLTools.buildmetadata(odm, mdv)
 
@@ -170,21 +192,11 @@ using Test
 
     cdv = ODMXMLTools.checkdatavalues(odm)
     @test length(cdv) == 0
-    #
 
-    odmt = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "nvtest.xml"))
-    mdbt = ODMXMLTools.buildmetadata(odmt, "ST_1_1", "mdv_1")
-    vodm = ODMXMLTools.validateodm(odmt)
-    @test length(vodm.log) == 8
-    @test_nowarn show(vodm, :INFO)
-    @test_nowarn show(io, vodm, :WARN)
-    @test_nowarn show(io, vodm, :ERROR)
-    @test_nowarn show(io, vodm, :SKIP)
+    # Write
+    ODMXMLTools.writenode(io, odm)
 
-    cdv  = ODMXMLTools.checkdatavalues(odmt)
-    @test length(cdv) == 3
-
-
+    # SPSS
     spssvallab =  ODMXMLTools.spss_form_value_labels(mdb, "FORM_VD_1"; variable = :OID)
     @test_nowarn show(io, spssvallab)
     spssvallab =  ODMXMLTools.spss_form_value_labels(mdb, "FORM_DEAN_1"; variable = :OID)
@@ -223,14 +235,67 @@ using Test
     cdel = ODMXMLTools.findelements(odm, :Study)
     @test length(cdel) == 2
 
+    # deleteat!
+    deleteat!(odm, 7)
+    @test length(odm.el) == 6
+
+    # Tree interface
     c = ODMXMLTools.children(odm)
     @test c == odm.el
     @test ODMXMLTools.isroot(odm) == true
     @test ODMXMLTools.isroot(c[1]) == false
 
     #@test ODMXMLTools.ischild(c[1], odm)
+    # Node information
 
     @test_nowarn show(io, ODMXMLTools.NODEINFO[:Study])
     @test_nowarn show(io, ODMXMLTools.NODEINFO[:GlobalVariables])
     @test_nowarn show(io, ODMXMLTools.NODEINFO[:StudyName])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:StudyDescription])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ProtocolName])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:BasicDefinitions])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:MeasurementUnit])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:Symbol])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:TranslatedText])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:MetaDataVersion])
+    #...#
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:StudyEventDef])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:FormRef])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:FormDef])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ItemGroupRef])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ItemGroupDef])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ItemRef])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ItemDef])
+    #...#
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:RangeCheck])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:CheckValue])
+    #...#
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:CodeList])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:CodeListItem])
+    #...#
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ClinicalData])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:SubjectData])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:StudyEventData])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:FormData])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ItemGroupData])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ItemData])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ItemDataAny])
+    @test_nowarn show(io, ODMXMLTools.NODEINFO[:ItemDataString])
+
+    ###
+    # Validation, Warnings and Errors
+    ##
+
+    odmt = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "nvtest.xml"))
+    mdbt = ODMXMLTools.buildmetadata(odmt, "ST_1_1", "mdv_1")
+    vodm = ODMXMLTools.validateodm(odmt)
+    @test length(vodm.log) == 8
+    @test_nowarn show(vodm, :INFO)
+    @test_nowarn show(io, vodm, :WARN)
+    @test_nowarn show(io, vodm, :ERROR)
+    @test_nowarn show(io, vodm, :SKIP)
+
+    cdv  = ODMXMLTools.checkdatavalues(odmt)
+    @test length(cdv) == 3
+
 end
