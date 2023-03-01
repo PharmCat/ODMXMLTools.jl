@@ -122,8 +122,7 @@ function checkchlds!(log, node, chlds, chldsref::String)
 end
 
 
-
-function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType; integrity = false)
+function checknode!(log::ODMXMLlog, node::AbstractODMNode, ::ODMNodeType)
     if haskey(NODEINFO, name(node))
         checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
         checkchlds!(log, node, node.el, NODEINFO[name(node)].body)
@@ -132,7 +131,7 @@ function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode
     end
 end
 
-function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ODM}; integrity = false)
+function checknode!(log::ODMXMLlog, node::AbstractODMNode, ::ODMNodeType{:ODM})
     ks = Set([:Description, :FileType, :Granularity, :Archival, :FileOID, :CreationDateTime, :PriorFileOID, :AsOfDateTime, :ODMVersion, :Originator, :SourceSystem, :SourceSystemVersion, :ID])
     for k in keys(node.attr)
         k in ks || push!(log, (:WARN, "$(name(node)): Unknown attribute ($(k)) in ODM (root) node."))
@@ -171,7 +170,7 @@ function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode
     end
 end
 
-function checknode!(log::ODMXMLlog, root::AbstractODMNode, node::AbstractODMNode, type::ODMNodeType{:ItemGroupData}; integrity = false)
+function checknode!(log::ODMXMLlog, node::AbstractODMNode, ::ODMNodeType{:ItemGroupData})
     checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
     dn = countnodenames(node, :ItemData)
     if dn > 0
@@ -214,11 +213,20 @@ function nodenameslist(node)
 end
 
 
-function validateodm_!(log::ODMXMLlog, root::ODMRoot, node::AbstractODMNode; odmnamespace::Symbol)
-    checknode!(log, root, node, ODMNodeType(name(node)))
+function validateodm_!(log::ODMXMLlog, node::AbstractODMNode; odmnamespace::Symbol)
+    checknode!(log, node, ODMNodeType(name(node)))
     for i in node.el
         if i.namespace == odmnamespace
-            validateodm_!(log, root, i; odmnamespace = odmnamespace)
+            validateodm_!(log, i; odmnamespace = odmnamespace)
+        else
+            push!(log, (:SKIP, "Node ($(name(i))) from namespace \"$(i.namespace)\" skipped from check."))
+        end
+    end
+end
+function validateodm_!(log::ODMXMLlog, node::StudyMetaData; odmnamespace::Symbol)
+    for i in node.el
+        if i.namespace == odmnamespace
+            validateodm_!(log, i; odmnamespace = odmnamespace)
         else
             push!(log, (:SKIP, "Node ($(name(i))) from namespace \"$(i.namespace)\" skipped from check."))
         end
@@ -226,7 +234,7 @@ function validateodm_!(log::ODMXMLlog, root::ODMRoot, node::AbstractODMNode; odm
 end
 
 """
-    validateodm(odm::ODMRoot)
+    validateodm(odm::AbstractODMNode)
 
 Basic structure validation.
 
@@ -234,9 +242,9 @@ Basic structure validation.
     Not full implemented.
 
 """
-function validateodm(odm::ODMRoot; odmnamespace::Symbol = Symbol(""))
+function validateodm(odm::AbstractODMNode; odmnamespace::Symbol = Symbol(""))
     log = ODMXMLlog(Tuple{Symbol, String}[])
-    validateodm_!(log, odm, odm; odmnamespace = odmnamespace)
+    validateodm_!(log, odm; odmnamespace = odmnamespace)
     log
 end
 
@@ -493,4 +501,71 @@ function pushlog!(log, t, s, e, f, g, i, msg)
     attribute(g, :ItemGroupRepeatKey),
     attribute(i, :ItemOID),
     msg))
+end
+
+
+function checkmdbid!(mdb)
+    log = ODMXMLlog(Tuple{Symbol, String}[])
+    prot = findelement(mdb, :Protocol)
+    events = findelements(mdb, :StudyEventDef)
+    forms  = findelements(mdb, :FormDef)
+    igrps  = findelements(mdb, :ItemGroupDef)
+    items  = findelements(mdb, :ItemDef)
+    clsts  = findelements(mdb, :CodeList)
+    # ODM Root
+    # munits = findelements(mdb, :CodeListDef)
+    if !isnothing(prot)
+        for j in prot.el
+            if name(j) == :StudyEventRef 
+                oid = attribute(j, :StudyEventOID)
+                tel = findelement(events, :StudyEventDef, oid)
+                if isnothing(tel) push!(log, (:ERROR, "Protocol, StudyEventDef: $oid not found!")) end
+            end 
+        end
+    end
+    if length(events) > 0
+        for i in events
+            for j in i.el
+                if name(j) == :FormRef 
+                    oid = attribute(j, :FormOID)
+                    tel = findelement(forms, :FormDef, oid)
+                    if isnothing(tel) push!(log, (:ERROR, "StudyEventDef OID: $(attribute(i, :OID)), FormDef: $oid not found!")) end
+                end 
+            end
+        end
+    end
+    if length(forms) > 0
+        for i in forms
+            for j in i.el
+                if name(j) == :ItemGroupRef 
+                    oid = attribute(j, :ItemGroupOID)
+                    tel = findelement(igrps, :ItemGroupDef, oid)
+                    if isnothing(tel) push!(log, (:ERROR, "FormDef OID: $(attribute(i, :OID)), ItemGroupDef: $oid not found!")) end
+                end 
+            end
+        end
+    end
+    if length(igrps) > 0
+        for i in igrps
+            for j in i.el
+                if name(j) == :ItemRef 
+                    oid = attribute(j, :ItemOID)
+                    tel = findelement(items, :ItemDef, oid)
+                    if isnothing(tel) push!(log, (:ERROR, "ItemGroupDef OID: $(attribute(i, :OID)), ItemDef: $oid not found!")) end
+                end 
+            end
+        end
+    end
+    if length(items) > 0
+        for i in items
+            for j in i.el
+                if name(j) == :CodeListRef 
+                    oid = attribute(j, :CodeListOID)
+                    tel = findelement(clsts, :CodeList, oid)
+                    if isnothing(tel) push!(log, (:ERROR, "ItemDef OID: $(attribute(i, :OID)), CodeList: $oid not found!")) end
+                end 
+            end
+        end
+    end
+    log
 end

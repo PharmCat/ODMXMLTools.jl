@@ -1,10 +1,10 @@
 module ODMXMLTools
-    using  EzXML, DataFrames, AbstractTrees
+    using  EzXML, DataFrames, AbstractTrees, Markdown
     using CategoricalArrays
     #using Dates
 	import AbstractTrees
     import AbstractTrees: children, isroot
-    import Base: show, findfirst, findall, push!
+    import Base: show, findfirst, findall, push!, deleteat!, length
 
     export importxml,
     findclinicaldata,

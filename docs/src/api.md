@@ -191,3 +191,37 @@ ODMXMLTools.spss_form_value_labels
 ```@docs
 ODMXMLTools.spss_events_value_labels
 ```
+
+## Utilities
+
+Not exported
+
+### ODMXMLTools.attribute
+```@docs
+ODMXMLTools.attribute
+```
+
+### ODMXMLTools.content
+```@docs
+ODMXMLTools.content
+```
+
+### ODMXMLTools.hasattribute
+```@docs
+ODMXMLTools.hasattribute
+```
+
+### ODMXMLTools.name
+```@docs
+ODMXMLTools.name
+```
+
+### ODMXMLTools.sortelements!
+```@docs
+ODMXMLTools.sortelements!
+```
+
+### ODMXMLTools.writenode!
+```@docs
+ODMXMLTools.writenode!
+```
