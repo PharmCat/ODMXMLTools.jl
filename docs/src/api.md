@@ -215,3 +215,13 @@ ODMXMLTools.hasattribute
 ```@docs
 ODMXMLTools.name
 ```
+
+### ODMXMLTools.sortelements!
+```@docs
+ODMXMLTools.sortelements!
+```
+
+### ODMXMLTools.writenode!
+```@docs
+ODMXMLTools.writenode!
+```

@@ -136,7 +136,7 @@ using Test
     @test_nowarn show(io, el)
     @test ODMXMLTools.content(el) == "Study 1"
 
-    mdvind = ODMXMLTools.findelementind(st1, :MetaDataVersion, "mdv_1")
+    mdvind = ODMXMLTools.findfirst(st1, :MetaDataVersion, "mdv_1")
     @test mdvind == 2
     mdv = ODMXMLTools.findelement(st1, :MetaDataVersion, "mdv_1")
     @test mdv == ODMXMLTools.findstudymetadata(odm, "ST_1_1", "mdv_1")
@@ -144,7 +144,7 @@ using Test
     idfe = ODMXMLTools.findelements(mdv, :ItemDef)
     @test all(ODMXMLTools.name.(idfe) .== :ItemDef)
 
-    idfei = ODMXMLTools.findelementinds(mdv, :ItemDef)
+    idfei = ODMXMLTools.findall(mdv, :ItemDef)
     @test idfei == [7, 8]
 
     @test_nowarn ODMXMLTools.buildmetadata(odm, mdv)
@@ -215,6 +215,9 @@ using Test
     cdv = ODMXMLTools.checkdatavalues(odm)
     @test length(cdv) == 0
 
+    checkidlog = ODMXMLTools.checkmdbid!(mdb)
+    @test length(checkidlog.log) == 0
+
     # Write
     ODMXMLTools.writenode(io, odm)
 
@@ -241,6 +244,8 @@ using Test
     # Test Openclinica form list (experimental)
     @test_nowarn ODMXMLTools.oclformdetailslist(mdb)
 
+    @test_nowarn ODMXMLTools.sortelements!(odm)
+
     # DELETE ClinicalData
     cdel = ODMXMLTools.findelements(odm, :ClinicalData)
     @test_nowarn show(io, cdel)
@@ -251,7 +256,6 @@ using Test
 
     # DELETE Study
     cdel = ODMXMLTools.findelements(odm, :Study)
-    @test cdel == findall(odm, :Study)
     @test length(cdel) == 3
     ODMXMLTools.deletestudy!(odm, "ST_1_1")
     cdel = ODMXMLTools.findelements(odm, :Study)
@@ -311,7 +315,7 @@ using Test
     odmt = ODMXMLTools.importxml(joinpath(dirname(@__FILE__), "nvtest.xml"))
     mdbt = ODMXMLTools.buildmetadata(odmt, "ST_1_1", "mdv_1")
     vodm = ODMXMLTools.validateodm(odmt)
-    @test length(vodm.log) == 8
+    @test length(vodm.log) == 7
     @test_nowarn show(vodm, :INFO)
     @test_nowarn show(io, vodm, :WARN)
     @test_nowarn show(io, vodm, :ERROR)

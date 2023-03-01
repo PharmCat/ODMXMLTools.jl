@@ -122,7 +122,6 @@ function checkchlds!(log, node, chlds, chldsref::String)
 end
 
 
-
 function checknode!(log::ODMXMLlog, node::AbstractODMNode, ::ODMNodeType)
     if haskey(NODEINFO, name(node))
         checkattrs!(log, node, keys(node.attr), NODEINFO[name(node)].attrs)
@@ -502,4 +501,71 @@ function pushlog!(log, t, s, e, f, g, i, msg)
     attribute(g, :ItemGroupRepeatKey),
     attribute(i, :ItemOID),
     msg))
+end
+
+
+function checkmdbid!(mdb)
+    log = ODMXMLlog(Tuple{Symbol, String}[])
+    prot = findelement(mdb, :Protocol)
+    events = findelements(mdb, :StudyEventDef)
+    forms  = findelements(mdb, :FormDef)
+    igrps  = findelements(mdb, :ItemGroupDef)
+    items  = findelements(mdb, :ItemDef)
+    clsts  = findelements(mdb, :CodeList)
+    # ODM Root
+    # munits = findelements(mdb, :CodeListDef)
+    if !isnothing(prot)
+        for j in prot.el
+            if name(j) == :StudyEventRef 
+                oid = attribute(j, :StudyEventOID)
+                tel = findelement(events, :StudyEventDef, oid)
+                if isnothing(tel) push!(log, (:ERROR, "Protocol, StudyEventDef: $oid not found!")) end
+            end 
+        end
+    end
+    if length(events) > 0
+        for i in events
+            for j in i.el
+                if name(j) == :FormRef 
+                    oid = attribute(j, :FormOID)
+                    tel = findelement(forms, :FormDef, oid)
+                    if isnothing(tel) push!(log, (:ERROR, "StudyEventDef OID: $(attribute(i, :OID)), FormDef: $oid not found!")) end
+                end 
+            end
+        end
+    end
+    if length(forms) > 0
+        for i in forms
+            for j in i.el
+                if name(j) == :ItemGroupRef 
+                    oid = attribute(j, :ItemGroupOID)
+                    tel = findelement(igrps, :ItemGroupDef, oid)
+                    if isnothing(tel) push!(log, (:ERROR, "FormDef OID: $(attribute(i, :OID)), ItemGroupDef: $oid not found!")) end
+                end 
+            end
+        end
+    end
+    if length(igrps) > 0
+        for i in igrps
+            for j in i.el
+                if name(j) == :ItemRef 
+                    oid = attribute(j, :ItemOID)
+                    tel = findelement(items, :ItemDef, oid)
+                    if isnothing(tel) push!(log, (:ERROR, "ItemGroupDef OID: $(attribute(i, :OID)), ItemDef: $oid not found!")) end
+                end 
+            end
+        end
+    end
+    if length(items) > 0
+        for i in items
+            for j in i.el
+                if name(j) == :CodeListRef 
+                    oid = attribute(j, :CodeListOID)
+                    tel = findelement(clsts, :CodeList, oid)
+                    if isnothing(tel) push!(log, (:ERROR, "ItemDef OID: $(attribute(i, :OID)), CodeList: $oid not found!")) end
+                end 
+            end
+        end
+    end
+    log
 end

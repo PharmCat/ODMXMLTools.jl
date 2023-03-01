@@ -46,6 +46,11 @@ struct StudyMetaData <: AbstractODMNode
     el::Vector{ODMNode}
 end
 
+struct NodeXOR
+    val::Vector{Tuple{Symbol, Symbol}}
+end
+
+
 function Base.show(io::IO, n::T) where T <: AbstractODMNode
     print(io, "$(n.name)  ($(:OID in keys(n.attr) ? "OID:$(attribute(n, :OID)))" : "")$(:StudyOID in keys(n.attr) ? " StudyOID:$(attribute(n, :StudyOID)))" : ""))")
 end
@@ -55,6 +60,11 @@ end
 function Base.show(io::IO, n::StudyMetaData)
     print(io, "Completed Study MetaData ($(length(n.el)) elements), OID: $(attribute(n.metadata, :OID)), Name: $(attribute(n.metadata, :Name))")
 end
+
+function Base.length(n::AbstractODMNode)
+    length(n.el)
+end
+
 
 function AbstractTrees.children(x::T) where T <: AbstractODMNode
     x.el
@@ -219,11 +229,6 @@ isItemGroupData(node::AbstractODMNode) = name(node) == :ItemGroupData
 isItemData(node::AbstractODMNode) = name(node) == :ItemData
 isItemDataType(node::AbstractODMNode) = name(node) in ITEMDATATYPE
 
-#=
-function have_attr(n::AbstractODMNode, attr::Symbol)
-    if  haskey(getfield(n, :attr), attr) return true else return false end
-end
-=#
 
 function have_oid(n::AbstractODMNode)
     hasattribute(n, :OID)
@@ -236,7 +241,7 @@ function appendelements!(inds::AbstractVector, n::AbstractODMNode, nname::Symbol
     end
     inds
 end
-
+#=
 function appendelements!(inds::AbstractVector, n::AbstractODMNode, nname::Union{Set{Symbol}, AbstractVector{Symbol}})
     for i in n.el
         if name(i) in nname
@@ -245,7 +250,7 @@ function appendelements!(inds::AbstractVector, n::AbstractODMNode, nname::Union{
     end
     inds
 end
-
+=#
 """
     content(n::AbstractODMNode)
     
@@ -299,13 +304,14 @@ end
 ################################################################################
 # BASIC FUNCTIONS
 ################################################################################
+# First element
 """
-    findelement(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
+    findelement(el::AbstractVector{AbstractODMNode}, nname::Symbol, oid::AbstractString)
 
 Find first element by node name `nname` and `oid`.
 """
-function findelement(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
-    for i in n.el
+function findelement(el::AbstractVector{<:AbstractODMNode}, nname::Symbol, oid::AbstractString)
+    for i in el
         if i.name == nname
             if have_oid(i)
                 if attribute(i, :OID) == oid return i end
@@ -314,20 +320,16 @@ function findelement(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
     end
 end
 """
-    Find index of element.
+    findelement(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
+
+Find first element by node name `nname` and `oid`.
 """
-function findelementind(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
-    for i in 1:length(n.el)
-        el = n.el[i]
-        if name(el) == nname
-            if have_oid(el)
-                if attribute(el, :OID) == oid return i end
-            end
-        end
-    end
+function findelement(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
+    findelement(n.el, nname, oid)
 end
+
 """
-    findelement(n::AbstractODMNode, nname)
+    findelement(n::AbstractODMNode, nname::Symbol)
 
 Find first element by node name `nname`.
 """
@@ -338,36 +340,14 @@ function findelement(n::AbstractODMNode, nname::Symbol)
         end
     end
 end
-
-Base.findfirst(n::AbstractODMNode, args...) = findelement(n, args...)
-#Base.findfirst(n::AbstractODMNode, nname::Symbol, oid::AbstractString) = findelement(n, nname, oid)
-
-function findelements_(n, nname::Symbol)
-    inds = ODMNode[]
-    for i in n
-        if name(i) == nname
-            push!(inds, i)
-        end
-    end
-    inds
-end
-
-function findelements_(n, nnames::Vector{Symbol})
-    inds = ODMNode[]
-    for i in n
-        if name(i) in nnames
-            push!(inds, i)
-        end
-    end
-    inds
-end
+# All element
 """
     findelements(n::AbstractODMNode, nname::Symbol)
 
 Find all elements by node name `nname`.
 """
 function findelements(n::AbstractODMNode, nname::Symbol)
-    findelements_(n.el, nname)
+    findelements(n.el, nname)
 end
 
 """
@@ -376,24 +356,29 @@ end
 Find all elements by node name `nnames` (list).
 """
 function findelements(n::AbstractODMNode, nnames::Vector{Symbol})
-    findelements_(n.el, nnames)
+    findelements(n.el, nnames)
 end
-
-"""
-    Find all elements indexes by node name `nname`.
-"""
-function findelementinds(n, nname::Symbol)
-    inds = Int[]
-    for i in 1:length(n.el)
-        if name(n.el[i]) == nname
+function findelements(el::AbstractVector{<:AbstractODMNode}, nname::Symbol)
+    inds = ODMNode[]
+    for i in el
+        if name(i) == nname
             push!(inds, i)
         end
     end
     inds
 end
 
+function findelements(el::AbstractVector{<:AbstractODMNode}, nnames::Vector{Symbol})
+    inds = ODMNode[]
+    for i in el
+        if name(i) in nnames
+            push!(inds, i)
+        end
+    end
+    inds
+end
 
-Base.findall(n::AbstractODMNode, args...) = findelements(n, args...)
+# Count
 """
     countelements(n::AbstractODMNode, nname::Symbol)
 
@@ -402,6 +387,43 @@ Count elements by node name `nname`.
 function countelements(n::AbstractODMNode, nname::Symbol)
     count(x-> nname == name(x), n.el)
 end
+
+##############
+# Base find*
+##############
+"""
+    findfirst(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
+
+Find first index of element.
+"""
+function Base.findfirst(n::AbstractODMNode, nname::Symbol, oid::AbstractString)
+    for i in 1:length(n.el)
+        el = n.el[i]
+        if name(el) == nname
+            if have_oid(el)
+                if attribute(el, :OID) == oid return i end
+            end
+        end
+    end
+end
+"""
+    Base.findall(n::AbstractODMNode, nname::Symbol)
+
+Find all elements indexes by node name `nname`.
+"""
+function Base.findall(n::AbstractODMNode, nname::Symbol)
+    findall(n.el, nname)
+end
+function Base.findall(el::AbstractVector{<:AbstractODMNode}, nname::Symbol)
+    inds = Int[]
+    for i in 1:length(el)
+        if name(el[i]) == nname
+            push!(inds, i)
+        end
+    end
+    inds
+end
+
 ################################################################################
 # SEARCH FUNCTIONS (find*)
 ################################################################################
@@ -893,6 +915,8 @@ function buildmetadata(odm::ODMRoot, soid::AbstractString, moid::AbstractString)
     if isnothing(mdat) error("MetaDataVersion not found (StudyOID: $(soid), MetaDataVersionOID: $(moid))") end
     stmd   = StudyMetaData(mdat, ODMNode[])
     fillstmd_(stmd.el, stmd.metadata, odm)
+    inds = findall(stmd, :Include)
+    if length(inds) > 0 deleteat!(stmd, inds) end
     stmd
 end
 
@@ -1007,10 +1031,10 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
     df    = DataFrame(OID = String[], CodeListOID = String[], Name = String[], DataType = String[], Type = String[], CodedValue = String[], Rank = Union{Missing, String}[], OrderNumber = Union{Missing, String}[], Text = String[])
     idef  = findelements(cd, :ItemDef)
     for id in idef
-        clr = findfirst(id, :CodeListRef)
+        clr = findelement(id, :CodeListRef)
         if !isnothing(clr)
             cla   = attribute(clr, :CodeListOID)
-            cl    = findfirst(cd, :CodeList, cla)
+            cl    = findelement(cd, :CodeList, cla)
             clil  = findelements(cl, [:CodeListItem, :EnumeratedItem])
             for cli in clil
                     dec  = findelement(cli, :Decode)
@@ -1334,7 +1358,9 @@ function fillstmd_(dest, source, odm)
     incl = findelements(source, :Include)
     if length(incl) > 0
         for i in incl
-            fillstmd_(dest, findstudymetadata(odm, attribute(i, :StudyOID), attribute(i, :MetaDataVersionOID)), odm)
+            inmd = findstudymetadata(odm, attribute(i, :StudyOID), attribute(i, :MetaDataVersionOID))
+            if isnothing(inmd) error("MetaDataVersion for inclusion (StudyOID: $(attribute(i, :StudyOID)), MetaDataVersionOID: $(attribute(i, :MetaDataVersionOID))) not found!") end
+            fillstmd_(dest, inmd, odm)
         end
     end
     dest
@@ -1449,7 +1475,13 @@ end
 function writenode(node::AbstractODMNode)
     writenode(stdout, node::AbstractODMNode)
 end
+"""
+    writenode(io::IO, node::AbstractODMNode)
+
+Write XML node into IO.
+"""
 function writenode(io::IO, node::AbstractODMNode)
+    println(io, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
     writenode(io::IO, node::AbstractODMNode, 0)
 end
 function writenode(io::IO, node::AbstractODMNode, sp::Int)
@@ -1457,18 +1489,101 @@ function writenode(io::IO, node::AbstractODMNode, sp::Int)
         for n in 1:sp print(io, "    ") end
     end
     print(io, "<$(name(node))")
-    for (k,v) in node.attr
-        print(io, " $k=\"$v\"")
+    attrs = NODEINFO[name(node)].attrs
+    for a in attrs
+        if hasattribute(node, a[1])
+            print(io, " $(a[1])=\"$(Markdown.htmlesc(attribute(node, a[1])))\"")
+        end
     end
-    print(io, ">$(content(node))")
+    if length(content(node)) > 0 || length(node) > 0
+        print(io, ">", Markdown.htmlesc(content(node)))
+        if length(node.el) > 0
+            println(io, "")
+            for n in node.el
+                writenode(io, n, sp + 1)
+            end
+            if sp > 0
+                for n in 1:sp print(io, "    ") end
+            end
+        end
+        println(io, "</$(name(node))>")
+    else
+        println(io, " />")
+    end
+end
+
+##########################################################################
+##
+##########################################################################
+
+function compare(x::Symbol, v::Tuple{Symbol, Symbol})
+    x == v[1]
+end
+function compare(x::Symbol, v::NodeXOR)
+    for i in v.val
+        if compare(x, i) return true end
+    end
+    false
+end
+
+function findnum(x, v)
+    for i = 1:length(v)
+        if compare(x, v[i]) return i end 
+    end
+    return length(v)+1
+end
+
+function nodeisless(x::AbstractODMNode, y::AbstractODMNode, root::Symbol)
+    ni = NODEINFO[root]
+    if name(x) == name(y)
+        if hasattribute(x, :OrderNumber) && hasattribute(y, :OrderNumber) 
+            xv = tryparse(Int, attribute(x, :OrderNumber))
+            yv = tryparse(Int, attribute(y, :OrderNumber))
+            if !isnothing(xv) && !isnothing(yv)
+                return isless(xv, yv)
+            end
+        end
+        if hasattribute(x, :OID)
+            return isless(attribute(x, :OID), attribute(y, :OID))
+        elseif hasattribute(x, :FormOID)
+            return isless(attribute(x, :FormOID), attribute(y, :FormOID))
+        elseif hasattribute(x, :ItemGroupOID)
+            return isless(attribute(x, :ItemGroupOID), attribute(y, :ItemGroupOID))
+        elseif hasattribute(x, :ItemOID)
+            return isless(attribute(x, :ItemOID), attribute(y, :ItemOID))
+        elseif hasattribute(x, :StudyOID)
+            return isless(attribute(x, :StudyOID), attribute(y, :StudyOID))
+        elseif hasattribute(x, :StudyOID)
+            return isless(attribute(x, :StudyOID), attribute(y, :StudyOID))
+        elseif hasattribute(x, :MeasurementUnitRef)
+            return isless(attribute(x, :MeasurementUnitRef), attribute(y, :MeasurementUnitRef))
+        elseif hasattribute(x, :MeasurementUnitOID)
+            return isless(attribute(x, :MeasurementUnitOID), attribute(y, :MeasurementUnitOID))
+        elseif hasattribute(x, :CodeListOID)
+            return isless(attribute(x, :CodeListOID), attribute(y, :CodeListOID))
+        else
+            return false
+        end
+    else
+        return isless(findnum(name(x), ni.body), findnum(name(y), ni.body))
+    end
+end
+
+"""
+    sortelements!(node::AbstractODMNode, rec::Bool = true)
+
+Try to sort node elements as in Specification for the Operational Data Model (ODM).
+
+
+`rec` - recursive.
+"""
+function sortelements!(node::AbstractODMNode, rec::Bool = true)
     if length(node.el) > 0
-        println(io, "")
-        for n in node.el
-            writenode(io, n, sp+1)
-        end
-        if sp > 0
-            for n in 1:sp print(io, "    ") end
+        sort!(node.el; lt = (x,y) -> nodeisless(x, y, name(node)))
+        if rec
+            for e in node.el
+                sortelements!(e, rec)
+            end
         end
     end
-    println(io, "</$(name(node))>")
 end
