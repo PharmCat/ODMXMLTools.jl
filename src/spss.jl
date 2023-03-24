@@ -41,9 +41,22 @@ function Base.show(io::IO, spssc::SPSSValueLabels)
     print(io, ".")
 end
 
+function getTTcontent(node, lang::String)
+    tt = findelements(node, :TranslatedText)
+    li = findfirst(x-> attribute(x, :lang) == lang, tt) 
+    if isnothing(li)
+        return content(first(tt))
+    else
+        return attribute(df[i], variable) => content(tt[li])
+    end
+end
+function getTTcontent(node, ::Nothing)
+    tt = findelement(node, :TranslatedText)
+    return content(tt)
+end
 
 """
-    spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name)
+    spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name, source = :attr, lang = nothing)
 
 SPSS command to set variable labels.
 
@@ -51,12 +64,34 @@ SPSS command to set variable labels.
 
 `labels` - labels names attribute, `Name` by default.
 
+If `source` == `:Question` - try to get description from `TranslatedText` of `Question` element, if there is no `Question` element - get from attribute `labels`.
+
+If `source` == `:Description` - try to get description from `TranslatedText` of `Description` element.
+
 """
-function spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name)
+function spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name, source = :attr, lang = nothing)
     df = itemformdefcontent_(mdb, form; optional = true)
     v  = Vector{Pair}(undef, length(df))
     for i = 1:size(df, 1)
-        v[i] = attribute(df[i], variable) => attribute(df[i], labels)
+        if source == :attr
+            v[i] = attribute(df[i], variable) => attribute(df[i], labels)
+        elseif source == :Question
+            q = findelement(df[i], :Question)
+            if isnothing(q)
+                v[i] = attribute(df[i], variable) => attribute(df[i], labels)
+            else
+                v[i] = attribute(df[i], variable) => getTTcontent(q, lang)
+            end
+        elseif source == :Description
+            q = findelement(df[i], :Description)
+            if isnothing(q)
+                v[i] = attribute(df[i], variable) => attribute(df[i], labels)
+            else
+                v[i] = attribute(df[i], variable) => getTTcontent(q, lang)
+            end
+        else
+            v[i] = attribute(df[i], variable) => attribute(df[i], labels)
+        end
     end
     SPSSVariableLabels(v)
 end
