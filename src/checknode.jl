@@ -348,6 +348,7 @@ function checkdatavalues(odm::ODMRoot)
                                                 end
                                                 if isnothing(pval)
                                                     pushlog!(log, :WARN, s, e, f, g, i, "DataType is $(itype), but value `$val` can't be parsed.")
+                                                    continue
                                                 end
                                                 # CODE LIST CHECK
                                                 clr = findelement(idef, :CodeListRef)

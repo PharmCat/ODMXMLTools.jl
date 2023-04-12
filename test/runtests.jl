@@ -271,6 +271,15 @@ using Test
     @test ODMXMLTools.isroot(odm) == true
     @test ODMXMLTools.isroot(c[1]) == false
 
+    # Make node and add to root
+    
+    cld = ODMXMLTools.mekenode!(odm, :ClinicalData, Dict(:StudyOID => "S1", :MetaDataVersionOID => "MD.1"))
+    @test ODMXMLTools.name(cld) == :ClinicalData
+    @test ODMXMLTools.attribute(cld, :StudyOID) == "S1"
+    @test ODMXMLTools.attribute(cld, :MetaDataVersionOID) == "MD.1"
+    @test ODMXMLTools.name(cld) == :ClinicalData
+    cdel = ODMXMLTools.findelements(odm, :ClinicalData)
+    @test length(cdel) == 2
     #@test ODMXMLTools.ischild(c[1], odm)
     # Node information
 
