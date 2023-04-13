@@ -302,8 +302,57 @@ function df_list(el::Vector{T}, nname::Symbol, attrs) where T <: AbstractODMNode
 end
 
 ################################################################################
+# MAKE NODE
+################################################################################
+function mekenode!(root::AbstractODMNode, nname::Symbol, attrs::Dict = Dict(); content = nothing, namespace = Symbol(""), checkname = false, checkni = false)
+    if checkname
+        if nname ∉ ODMNAMESPACE error("Name $nname not in ODMNAMESPACE!") end
+    end
+    if checkni
+        ni = NODEINFO[name(root)]
+        if isa(ni.body, AbstractString) || isnothing(ni.body) error("Node can not be added to $(name(root))!") end
+        nifail = true
+        for e in ni.body
+            if isa(e, NodeXOR)
+                for j in e.val
+                    if j[1] == nname 
+                        nifail = false
+                        break
+                    end
+                end
+            else
+                if e[1] == nname nifail = false end
+            end
+            if !nifail break end
+        end
+        if nifail error("Node can not be added to $(name(root))! See `ODMXMLTools.NODEINFO[:$(name(root))]`")  end
+    end
+    newnode = ODMNode(nname, attrs, content, namespace)
+    push!(root.el, newnode)
+    newnode
+end
+
+################################################################################
 # BASIC FUNCTIONS
 ################################################################################
+"""
+    findelementbyattr(el::AbstractVector{<:AbstractODMNode}, nname::Symbol, attr::Symbol, value::AbstractString)
+
+Find first element by node name `nname` with attribute `attr` equal `value`.
+"""
+function findelementbyattr(el::AbstractVector{<:AbstractODMNode}, nname::Symbol, attr::Symbol, value::AbstractString)
+    for i in el
+        if i.name == nname
+            if hasattribute(i, attr)
+                if attribute(i, attr) == value return i end
+            end
+        end
+    end
+end
+
+function findelementbyattr(n::AbstractODMNode, nname::Symbol, attr::Symbol, value::AbstractString)
+    findelementbyattr(n.el, nname, attr, value)
+end
 # First element
 """
     findelement(el::AbstractVector{AbstractODMNode}, nname::Symbol, oid::AbstractString)
@@ -1508,7 +1557,7 @@ function writenode(io::IO, node::AbstractODMNode, sp::Int)
         end
         println(io, "</$(name(node))>")
     else
-        println(io, " />")
+        println(io, "/>")
     end
 end
 
