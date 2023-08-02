@@ -221,6 +221,8 @@ using Test
     # Write
     ODMXMLTools.writenode(io, odm)
 
+    @test_nowarn ODMXMLTools.writenode("test_file.xml", odm)
+
     # SPSS
     spssvallab =  ODMXMLTools.spss_form_value_labels(mdb, "FORM_VD_1"; variable = :OID)
     @test_nowarn show(io, spssvallab)
@@ -280,6 +282,10 @@ using Test
     @test ODMXMLTools.name(cld) == :ClinicalData
     cdel = ODMXMLTools.findelements(odm, :ClinicalData)
     @test length(cdel) == 2
+
+    newcldat = ODMXMLTools.makeclinicaldata!(odm, "TestSOID", "TestMOID")
+    @test ODMXMLTools.isClinicalData(newcldat)
+
     #@test ODMXMLTools.ischild(c[1], odm)
     # Node information
 

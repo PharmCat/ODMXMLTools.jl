@@ -5,6 +5,18 @@
 ODMXMLTools.importxml
 ```
 
+## Make node
+
+### ODMXMLTools.mekenode!
+```@docs
+ODMXMLTools.mekenode!
+```
+
+### ODMXMLTools.makeclinicaldata!
+```@docs
+ODMXMLTools.makeclinicaldata!
+```
+
 ## Build metadata
 
 ### ODMXMLTools.buildmetadata
@@ -221,7 +233,7 @@ ODMXMLTools.name
 ODMXMLTools.sortelements!
 ```
 
-### ODMXMLTools.writenode!
+### ODMXMLTools.writenode
 ```@docs
-ODMXMLTools.writenode!
+ODMXMLTools.writenode
 ```
