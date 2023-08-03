@@ -7,6 +7,9 @@ module ODMXMLTools
     import Base: show, findfirst, findall, push!, deleteat!, length
 
     export importxml,
+
+	mekenode!,
+
     findclinicaldata,
     findstudy,
     findstudymetadata,

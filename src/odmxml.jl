@@ -304,6 +304,11 @@ end
 ################################################################################
 # MAKE NODE
 ################################################################################
+"""
+    mekenode!(root::AbstractODMNode, nname::Symbol, attrs::Dict = Dict(); content = nothing, namespace = Symbol(""), checkname = false, checkni = false)
+
+Make ODM node in root.
+"""
 function mekenode!(root::AbstractODMNode, nname::Symbol, attrs::Dict = Dict(); content = nothing, namespace = Symbol(""), checkname = false, checkni = false)
     if checkname
         if nname ∉ ODMNAMESPACE error("Name $nname not in ODMNAMESPACE!") end
@@ -1560,6 +1565,15 @@ function writenode(io::IO, node::AbstractODMNode, sp::Int)
         println(io, "/>")
     end
 end
+function writenode(file::String, node::AbstractODMNode; sp = 1)
+    f = open(file, "w")
+    try
+        writenode(f, node, sp)
+    finally
+        close(f)
+    end
+    nothing
+end
 
 ##########################################################################
 ##
@@ -1635,4 +1649,24 @@ function sortelements!(node::AbstractODMNode, rec::Bool = true)
             end
         end
     end
+end
+
+
+#####################################################################
+## MAKE NODES
+#####################################################################
+"""
+    makeclinicaldata!(odm::ODMRoot, soid::String, moid::String)
+
+Make ClinicalData in ODM.
+"""
+function makeclinicaldata!(odm::ODMRoot, soid::String, moid::String)
+    for i in odm.el
+        if isClinicalData(i)
+            if attribute(i, "StudyOID") == soid && attribute(i, "MetaDataVersionOID") == moid
+                error("ODM has ClinicalData with same StudyOID and MetaDataVersionOID")
+            end
+        end
+    end
+    mekenode!(odm, :ClinicalData, Dict(:StudyOID => soid, :MetaDataVersionOID => moid))
 end
