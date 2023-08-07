@@ -156,6 +156,13 @@ ODMXMLTools.itemquestion
 ODMXMLTools.nodedesq
 ```
 
+## Decode
+
+### ODMXMLTools.codelistitemdecode
+```@docs
+ODMXMLTools.codelistitemdecode
+```
+
 ## Delete 
 
 ### ODMXMLTools.deletestudy!

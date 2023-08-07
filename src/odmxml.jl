@@ -1077,9 +1077,30 @@ function codelisttable(cd::AbstractODMNode; lang = "en")
 end
 
 """
+    codelistitemdecode(cli; lang = nothing, nolangerr = true, nolangval = "")
+
+Return TranslatedText content for Decode node.
+"""
+function codelistitemdecode(cli; lang = nothing, nolangerr = true, nolangval = "")
+    if name(cli) != :CodeListItem  error("Wrong node name ($(name(cli)), not CodeListItem)") end
+    decodenode = findelement(cli, :Decode)
+    if isnothing(decodenode) error("No Decode node in CodeListItem") end
+    t = findelements(cli, :TranslatedText)
+    if length(t) == 0 error("No TranslatedText node in Decode") end
+    if isnothing(lang)
+        return content(first(t))
+    else
+        for tv in t 
+            if attribute(tv, :lang)  == lang return content(first(tv)) end
+        end
+    end
+    if nolangerr error("No TranslatedText for lang $lang found") end
+    return nolangval
+end
+"""
     itemcodelisttable(cd::AbstractODMNode; lang = nothing) where T <: AbstractODMNode
 
-Same as `codelisttable`, but return ItemDef.
+Same as `codelisttable`, but return ItemDef (DataFrame).
 """
 function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
     df    = DataFrame(OID = String[], CodeListOID = String[], Name = String[], DataType = String[], Type = String[], CodedValue = String[], Rank = Union{Missing, String}[], OrderNumber = Union{Missing, String}[], Text = String[])
@@ -1116,6 +1137,11 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
     end
     df
 end
+
+
+
+
+
 
 function dfpush!(df, s, e, f, g, i, null)
     push!(df, (s,
