@@ -1085,7 +1085,7 @@ function codelistitemdecode(cli; lang = nothing, nolangerr = true, nolangval = "
     if name(cli) != :CodeListItem  error("Wrong node name ($(name(cli)), not CodeListItem)") end
     decodenode = findelement(cli, :Decode)
     if isnothing(decodenode) error("No Decode node in CodeListItem") end
-    t = findelements(cli, :TranslatedText)
+    t = findelements(decodenode, :TranslatedText)
     if length(t) == 0 error("No TranslatedText node in Decode") end
     if isnothing(lang)
         return content(first(t))
