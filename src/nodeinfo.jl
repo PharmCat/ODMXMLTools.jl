@@ -130,7 +130,7 @@ const NODEINFO = Dict{Symbol, NodeInfo}(
     ),
 :TranslatedText => NodeInfo(:TranslatedText, 
     [:Decode, :ErrorMessage, :Question, :Symbol, :Description],
-    Tuple{Symbol, Symbol, Symbol}[(:lang, :?,  :languageTag)],
+    Tuple{Symbol, Symbol, Symbol}[(Symbol("xml:lang"), :?,  :languageTag)],
     "text"
     ),
 :MetaDataVersion => NodeInfo(:MetaDataVersion, 
@@ -278,7 +278,7 @@ const NODEINFO = Dict{Symbol, NodeInfo}(
     ),
 :Presentation => NodeInfo(:Presentation, 
     :MetaDataVersion,
-    [(:OID, :!,  :oid), (:lang, :?,  :languageTag)],
+    [(:OID, :!,  :oid), (Symbol("xml:lang"), :?,  :languageTag)],
     "text"
     ),
 :ConditionDef => NodeInfo(:ConditionDef, 

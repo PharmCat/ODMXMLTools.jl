@@ -256,7 +256,7 @@ module ODMXMLTools
 	:UserType
 	:Value
 	:Version
-	:lang
+	Symbol("xml:lang")
 	:xmlns])
 
     const ITEMDATATYPE = Set([:ItemDataAny

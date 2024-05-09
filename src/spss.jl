@@ -58,7 +58,9 @@ end
 """
     spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name, source = :attr, lang = nothing)
 
-SPSS command to set variable labels.
+SPSS command to set variable labels:
+
+```VARIABLE LABELS variable 'labels'.```
 
 `variable` - varable names attribute, `OID` by default.
 
@@ -67,6 +69,8 @@ SPSS command to set variable labels.
 If `source` == `:Question` - try to get description from `TranslatedText` of `Question` element, if there is no `Question` element - get from attribute `labels`.
 
 If `source` == `:Description` - try to get description from `TranslatedText` of `Description` element.
+
+
 
 """
 function spss_form_variable_labels(mdb, form; variable = :OID, labels = :Name, source = :attr, lang = nothing)

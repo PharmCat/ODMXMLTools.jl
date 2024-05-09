@@ -84,16 +84,20 @@ function makenode(str, attr)
     return ODMNode(Symbol(str), attr)
 end
 =#
-function attributes_dict(n)
+function attributes_dict(n, ns)
     d = Dict{Symbol, String}()
-    for i in eachattribute(n)
-        d[Symbol(i.name)] = i.content
-    end
+    attributes_dict!(d, root, n)
     d
 end
-function attributes_dict!(d, n)
-    for i in eachattribute(n)
-        d[Symbol(i.name)] = i.content
+function attributes_dict!(d, ns, n)
+    for i in EzXML.attributes(n)
+            if EzXML.hasnamespace(i)
+                pref = ns[EzXML.namespace(i)]
+                k = Symbol(string(pref)*":"*i.name)
+            else
+                k = Symbol(i.name)
+            end
+            d[k] = i.content
     end
     d
 end
@@ -109,11 +113,12 @@ function importxml(file::AbstractString)
     nsv = namespaces(xodm)
     if EzXML.hasnamespace(xodm)
         nsv = namespaces(xodm)
+        push!(nsv, "xml" => "http://www.w3.org/XML/1998/namespace" )
     else
-        nsv = ["" => ""]
+        nsv = ["xml" => "http://www.w3.org/XML/1998/namespace"]
     end
     ns    = Dict([p[2] => Symbol(p[1]) for p in nsv]...)
-    odm   = ODMRoot(attributes_dict(xodm), ns)
+    odm   = ODMRoot(attributes_dict(xodm, ns), ns)
     importxml_(odm, xodm, ns)
     odm
 end
@@ -125,7 +130,7 @@ function importxml_(parent, root, ns)
             content = nothing
             attr = Dict{Symbol, String}()
             #if iselement(c)
-            attributes_dict!(attr, c)
+            attributes_dict!(attr, ns, c)
             if !haselement(c)
                 tv = EzXML.eachnode(root)
                 for t in tv
@@ -1058,7 +1063,7 @@ function codelisttable(cd::AbstractODMNode; lang = "en")
             text = content(first(tn))
             if length(tn) > 1
                 for i = 2:length(tn)
-                    if attribute(tn[i], :lang) == lang 
+                    if attribute(tn[i], Symbol("xml:lang")) == lang 
                         text = content(tn[i])
                         break
                     end
@@ -1117,7 +1122,7 @@ function itemcodelisttable(cd::AbstractODMNode; lang = nothing)
                         text = content(first(tn))
                         if length(tn) > 1
                             for i = 2:length(tn)
-                                if attribute(tn[i], :lang) == lang 
+                                if attribute(tn[i], Symbol("xml:lang")) == lang 
                                     text = content(tn[i])
                                     break
                                 end
