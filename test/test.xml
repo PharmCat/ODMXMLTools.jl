@@ -117,24 +117,26 @@
 			<CodeList OID="CL_1" Name="Race codelist" DataType="integer" SASFormatName="CL_1">
 				<CodeListItem CodedValue="1">
 					<Decode>
-						<TranslatedText>Asian</TranslatedText>
+						<TranslatedText xml:lang = "en-US">Asian</TranslatedText>
+						<TranslatedText xml:lang = "ru">Азиатская</TranslatedText>
 					</Decode>
 				</CodeListItem>
 				<CodeListItem CodedValue="2">
 					<Decode>
-						<TranslatedText>Caucasian</TranslatedText>
+						<TranslatedText xml:lang = "en-US">Caucasian</TranslatedText>
+						<TranslatedText xml:lang = "ru">Европеоидная</TranslatedText>
 					</Decode>
 				</CodeListItem>
 			</CodeList>
 			<CodeList OID="CL_2" Name="Sex codelist" DataType="string" SASFormatName="CL_2">
 				<CodeListItem CodedValue="M">
 					<Decode>
-						<TranslatedText>Male</TranslatedText>
+						<TranslatedText xml:lang = "en-US">Male</TranslatedText>
 					</Decode>
 				</CodeListItem>
 				<CodeListItem CodedValue="F">
 					<Decode>
-						<TranslatedText>Female</TranslatedText>
+						<TranslatedText xml:lang = "en-US">Female</TranslatedText>
 					</Decode>
 				</CodeListItem>
 			</CodeList>
@@ -154,12 +156,12 @@
 			<CodeList OID="CL_2" Name="Sex codelist" DataType="integer" SASFormatName="CL_2">
 				<CodeListItem CodedValue="1">
 					<Decode>
-						<TranslatedText>Male</TranslatedText>
+						<TranslatedText xml:lang = "en-US">Male</TranslatedText>
 					</Decode>
 				</CodeListItem>
 				<CodeListItem CodedValue="2">
 					<Decode>
-						<TranslatedText>Female</TranslatedText>
+						<TranslatedText xml:lang = "en-US">Female</TranslatedText>
 					</Decode>
 				</CodeListItem>
 			</CodeList>

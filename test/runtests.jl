@@ -347,3 +347,13 @@ doc = EzXML.readxml(joinpath(dirname(@__FILE__), "test.xml"))
 dtdn = EzXML.readdtd(joinpath(dirname(@__FILE__), "test-schema.dtd"))
 EzXML.validate(doc, dtdn)
 =#
+
+
+#=
+txt = """<?xml version="1.0" encoding="UTF-8"?>
+ <t1>
+    <t2 xml:name="Homo"></t2>
+    <t2 b:name="Homo"></t2>
+ </t1>"""
+root(EzXML.parsexml(txt));
+=#
