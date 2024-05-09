@@ -244,3 +244,39 @@ ODMXMLTools.sortelements!
 ```@docs
 ODMXMLTools.writenode
 ```
+
+Other:
+
+### ODMXMLTools.oclformdetailslist
+```@docs
+ODMXMLTools.oclformdetailslist
+```
+
+### ODMXMLTools.countelements
+```@docs
+ODMXMLTools.countelements
+```
+
+### ODMXMLTools.findelementbyattr
+```@docs
+ODMXMLTools.findelementbyattr
+```
+
+### ODMXMLTools.buildelementsdata
+```@docs
+ODMXMLTools.buildelementsdata
+```
+
+
+
+## Base
+
+### Base.findall
+```@docs
+Base.findall
+```
+
+### Base.findfirst
+```@docs
+Base.findfirst
+```
